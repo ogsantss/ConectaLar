@@ -1,10 +1,17 @@
 package com.conectaLar.conectaLar.Entity;
 
+import java.security.Identity;
+
 import org.springframework.format.annotation.NumberFormat;
 
+import com.conectaLar.conectaLar.Enums.Identification;
+
 import jakarta.*;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -12,31 +19,40 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-@Entity 
-@Table (name = "usuarios")
+@Entity
+@Table(name = "usuarios")
 public class User {
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
     @Column(nullable = false)
-    @NotBlank 
+    @NotBlank
     private String nome;
-    
+
     @Column(nullable = false, unique = true)
-    @Email 
+    @Email
     private String email;
 
-    @Column (nullable = false, unique = true)
+    public void setIdentify(Identification identify) {
+        this.identify = identify;
+    }
+
+    @Column(nullable = false, unique = true)
     @NotBlank
-    @NumberFormat 
+    @NumberFormat
     private String celular;
 
-    @Column 
-    @NotBlank 
+    @Column(nullable = false)
+    @NotBlank
     private String senha;
 
-    public User(){}
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Identification identify;
+
+    public User() {
+    }
 
     public long getId() {
         return id;
