@@ -1,13 +1,11 @@
-package com.conectaLar.conectaLar.Entity;
+package com.conectaLar.conectaLar.entity;
 
-import java.security.Identity;
 
 import org.springframework.format.annotation.NumberFormat;
 
 import com.conectaLar.conectaLar.Enums.Identification;
 
-import jakarta.*;
-import jakarta.annotation.Nullable;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

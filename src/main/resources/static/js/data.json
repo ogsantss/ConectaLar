@@ -1,0 +1,64 @@
+{
+    "pros": [
+        {
+            "id": 1,
+            "nome": "Maria Aparecida",
+            "nota": 4.9,
+            "av": 58,
+            "preco": 140,
+            "serv": "Limpeza, Passar roupa",
+            "dist": "1,2 km"
+        },
+        {
+            "id": 2,
+            "nome": "Luana Ribeiro",
+            "nota": 4.8,
+            "av": 34,
+            "preco": 130,
+            "serv": "Limpeza, Organização",
+            "dist": "2,0 km"
+        },
+        {
+            "id": 3,
+            "nome": "Fernanda Lima",
+            "nota": 4.7,
+            "av": 21,
+            "preco": 120,
+            "serv": "Passar roupa",
+            "dist": "3,4 km"
+        }
+    ],
+    "pedidos": [
+        {
+            "t": "Limpeza residencial completo",
+            "v": "R$ 140",
+            "d": "Qui, 03 out · 08:00–12:00 · Apartamento 2 quartos"
+        },
+        {
+            "t": "Passar roupa",
+            "v": "R$ 90",
+            "d": "Sex, 04 out · 14:00–17:00 · 10 peças"
+        },
+        {
+            "t": "Limpeza pós-obra",
+            "v": "R$ 260",
+            "d": "Sáb, 05 out · 08:00–14:00 · Casa 3 quartos"
+        }
+    ],
+    "solic": [
+        {
+            "t": "Limpeza residencial",
+            "d": "Ana Paula",
+            "q": "15/10/2026 • 08:00",
+            "s": "Aguardando confirmação",
+            "c": "w"
+        },
+        {
+            "t": "Limpeza residencial",
+            "d": "Mariana",
+            "q": "10/10/2026 • 09:00",
+            "s": "Concluído",
+            "c": "ok"
+        }
+    ]
+}

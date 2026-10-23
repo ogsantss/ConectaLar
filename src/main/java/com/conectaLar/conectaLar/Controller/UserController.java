@@ -1,34 +1,31 @@
 package com.conectaLar.conectaLar.Controller;
 
+import com.conectaLar.conectaLar.dto.UserCreateDTO;
+import com.conectaLar.conectaLar.entity.User;
+import com.conectaLar.conectaLar.service.UserService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.conectaLar.conectaLar.Entity.User;
-import com.conectaLar.conectaLar.Repository.UserRepository;
 
 import jakarta.validation.Valid;
 
-@RestController 
-@RequestMapping ("/usuarios")
+@RestController
+@RequestMapping("/usuarios")
 public class UserController {
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public UserController(UserRepository userRepository){
-        this.userRepository = userRepository;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
-    @PostMapping 
-    public ResponseEntity<User> cadastrar(@Valid @RequestBody User usuario){
-        User usuarioSalvo = userRepository.save(usuario);
+    @PostMapping
+    public ResponseEntity<UserCreateDTO> cadastrar(@Valid @RequestBody User usuario) {
+        UserCreateDTO usuarioSalvo = userService.save(usuario);
 
         return ResponseEntity
-        .status(HttpStatus.CREATED)
-        .body(usuarioSalvo);
+                .status(HttpStatus.CREATED)
+                .body(usuarioSalvo);
     }
+
 }
