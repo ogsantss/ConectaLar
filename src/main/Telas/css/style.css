@@ -1,0 +1,537 @@
+:root {
+    --p: #0b6f8a;
+    --pd: #095a70;
+    --bg: #e8f2f6;
+    --t: #1d3b47;
+    --m: #6b8591;
+    --l: #d7e6ec;
+    --ok: #d9f2e3;
+    --warn: #fdeec3
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    font-family: Poppins, system-ui, sans-serif
+}
+
+body {
+    background: linear-gradient(#f6fbfd, var(--bg));
+    color: var(--t);
+    min-height: 100vh;
+    font-size: 14px
+}
+
+a {
+    color: inherit;
+    text-decoration: none
+}
+
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 40px;
+    background: #fff;
+    box-shadow: 0 1px 6px #0001;
+    position: sticky;
+    top: 0;
+    z-index: 5
+}
+
+.logo {
+    font-weight: 700;
+    color: var(--p);
+    font-size: 20px
+}
+
+nav {
+    display: flex;
+    gap: 40px;
+    font-weight: 500;
+    font-size: 13px
+}
+
+nav a.on,
+nav a:hover {
+    color: var(--p)
+}
+
+.user {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--p);
+    display: grid;
+    place-items: center;
+    color: #fff
+}
+
+.wrap {
+    max-width: 1100px;
+    margin: 24px auto;
+    padding: 0 20px
+}
+
+.card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px #0001
+}
+
+.btn {
+    background: var(--p);
+    color: #fff;
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-block
+}
+
+.btn:hover {
+    background: var(--pd)
+}
+
+.btn.out {
+    background: #fff;
+    color: var(--p);
+    border: 1.5px solid var(--p)
+}
+
+.btn.full {
+    width: 100%;
+    text-align: center
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: #ececec;
+    font-size: 14px
+}
+
+label {
+    font-weight: 600;
+    display: block;
+    margin: 12px 0 5px
+}
+
+h1 {
+    font-size: 34px
+}
+
+h2 {
+    color: var(--p);
+    margin-bottom: 12px
+}
+
+.tag {
+    background: #cfe8f1;
+    color: var(--pd);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 12px;
+    display: inline-block
+}
+
+.tag.ok {
+    background: var(--ok)
+}
+
+.tag.w {
+    background: var(--warn)
+}
+
+.chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap
+}
+
+.chip {
+    border: 1px solid var(--l);
+    background: #fff;
+    border-radius: 20px;
+    padding: 6px 18px;
+    cursor: pointer
+}
+
+.chip.on {
+    background: var(--p);
+    color: #fff;
+    border-color: var(--p)
+}
+
+.grid2 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px
+}
+
+.hero {
+    background: linear-gradient(120deg, #0b6f8a, #7cc3d6);
+    color: #fff;
+    border-radius: 16px;
+    padding: 70px 50px;
+    min-height: 420px
+}
+
+.hero h1 span {
+    color: #bff0ff
+}
+
+.hero .tag {
+    font-size: 15px;
+    padding: 8px 18px;
+    margin-bottom: 20px
+}
+
+.cep {
+    display: flex;
+    gap: 10px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px;
+    max-width: 520px;
+    margin-top: 24px
+}
+
+.cep input {
+    background: #fff
+}
+
+.pro {
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    background: #fff;
+    margin-bottom: 12px;
+    cursor: pointer;
+    align-items: center
+}
+
+.pro.on {
+    border-color: var(--p)
+}
+
+.pro>div {
+    flex: 1
+}
+
+.av {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #bcdde8;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    color: var(--pd);
+    flex: none
+}
+
+.map {
+    min-height: 480px;
+    border-radius: 12px;
+    background: radial-gradient(circle at 50% 50%, #0b6f8a33 0 90px, transparent 91px), repeating-linear-gradient(45deg, #e9efe9 0 40px, #f4f6f1 40px 80px);
+    position: relative
+}
+
+.pin {
+    position: absolute;
+    background: var(--p);
+    color: #fff;
+    width: 30px;
+    height: 30px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: grid;
+    place-items: center
+}
+
+.pin b {
+    transform: rotate(45deg)
+}
+
+.days {
+    display: flex;
+    gap: 8px
+}
+
+.day {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    border-radius: 8px;
+    border: 1px solid var(--l);
+    cursor: pointer
+}
+
+.day.on {
+    background: var(--p);
+    color: #fff
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--l);
+    margin-bottom: 16px
+}
+
+.tabs button {
+    flex: 1;
+    background: 0;
+    border: 0;
+    padding: 10px;
+    font-weight: 600;
+    color: var(--m);
+    cursor: pointer
+}
+
+.tabs .on {
+    color: var(--p);
+    border-bottom: 2px solid var(--p)
+}
+
+.auth {
+    max-width: 420px;
+    margin: 50px auto
+}
+
+.pw {
+    position: relative
+}
+
+.pw span {
+    position: absolute;
+    right: 12px;
+    top: 11px;
+    cursor: pointer
+}
+
+.err {
+    color: #c0392b;
+    font-size: 12px;
+    min-height: 16px
+}
+
+.chat {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    height: 560px;
+    padding: 0;
+    overflow: hidden
+}
+
+.chat aside {
+    border-right: 1px solid var(--l);
+    overflow: auto
+}
+
+.chat aside div {
+    padding: 12px;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: center
+}
+
+.chat aside .on {
+    background: #dcedf3
+}
+
+.msgs {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 10px;
+    overflow: auto;
+    flex: 1
+}
+
+.m {
+    max-width: 65%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #f0f4f6
+}
+
+.m.me {
+    align-self: flex-end;
+    background: #cfe8f1
+}
+
+.send {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--l)
+}
+
+.chat section {
+    display: flex;
+    flex-direction: column
+}
+
+.req {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 14px;
+    border: 1px solid var(--l);
+    border-radius: 10px
+}
+
+.sum {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0
+}
+
+@media(max-width:800px) {
+
+    .grid2,
+    .chat {
+        grid-template-columns: 1fr
+    }
+
+    nav {
+        display: none
+    }
+
+    header {
+        padding: 12px 16px
+    }
+
+    .hero {
+        padding: 40px 24px
+    }
+}
+
+html {
+    scroll-behavior: smooth
+}
+
+section[id] {
+    scroll-margin-top: 70px
+}
+
+.menu {
+    position: relative
+}
+
+button.user {
+    border: 0;
+    cursor: pointer;
+    font-size: 16px
+}
+
+.drop {
+    position: absolute;
+    right: 0;
+    top: 48px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px #0003;
+    min-width: 170px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: .2s
+}
+
+.drop.open {
+    opacity: 1;
+    visibility: visible;
+    transform: none
+}
+
+.drop a {
+    display: block;
+    padding: 12px 18px;
+    font-weight: 500
+}
+
+.drop a:first-child {
+    color: #fff;
+    background: var(--p)
+}
+
+.drop a:last-child:hover {
+    background: var(--bg)
+}
+
+.sec {
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 50px 0
+}
+
+.sec>h2 {
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 8px
+}
+
+.sub {
+    text-align: center;
+    color: var(--m);
+    margin-bottom: 30px
+}
+
+.cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px
+}
+
+.ico {
+    font-size: 34px;
+    margin-bottom: 8px
+}
+
+.rev {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: .7s
+}
+
+.rev.in {
+    opacity: 1;
+    transform: none
+}
+
+.hero {
+    min-height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center
+}
+
+.cta {
+    background: var(--p);
+    color: #fff;
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center
+}
+
+.cta .btn {
+    background: #fff;
+    color: var(--p);
+    margin: 14px 6px 0
+}
