@@ -1,4 +1,4 @@
-package com.conectaLar.conectaLar.Controller;
+package com.conectaLar.conectaLar.controller;
 
 import com.conectaLar.conectaLar.dto.UserCreateDTO;
 import com.conectaLar.conectaLar.entity.User;

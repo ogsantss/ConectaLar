@@ -3,28 +3,36 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>conectaLar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Buscar profissionais - conectaLar</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body data-page="busca">
     <main class="wrap">
-        <div class="card" style="display:flex;gap:10px;margin-bottom:16px"><input
-                placeholder="Localização: 04845-200"><select>
+        <div class="card" style="display:flex;gap:10px;margin-bottom:16px">
+            <input aria-label="Localização (CEP)" placeholder="Localização: 04845-200">
+            <select aria-label="Tipo de serviço">
                 <option>Limpeza residencial</option>
                 <option>Passar roupa</option>
-            </select><input type="date"><button class="btn">Buscar</button></div>
+            </select>
+            <input type="date" aria-label="Data">
+            <button type="button" class="btn">Buscar</button>
+        </div>
+
         <div class="grid2" style="grid-template-columns:1fr 1.6fr">
             <div>
                 <h2><span id="n">0</span> profissionais perto de você</h2>
                 <div id="lista"></div>
             </div>
-            <div class="map"><span class="pin" style="top:120px;left:40%"><b>1</b></span><span class="pin"
-                    style="top:90px;left:65%"><b>2</b></span><span class="pin"
-                    style="top:260px;left:55%"><b>3</b></span></div>
+            <div class="map" aria-label="Mapa com a localização das profissionais">
+                <span class="pin" style="top:120px;left:40%"><b>1</b></span>
+                <span class="pin" style="top:90px;left:65%"><b>2</b></span>
+                <span class="pin" style="top:260px;left:55%"><b>3</b></span>
+            </div>
         </div>
     </main>
+
     <script src="js/app.js"></script>
 </body>
 

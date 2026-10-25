@@ -3,20 +3,24 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>conectaLar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agenda da prestadora - conectaLar</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body data-page="agenda">
-    <main class="wrap"><span class="tag">ÁREA DO PRESTADOR</span>
-        <h1 style="font-size:24px;color:var(--p);margin:10px 0 20px">Olá, Prestadora! Você tem <span id="novos">0</span>
-            novos pedidos</h1>
+    <main class="wrap">
+        <span class="tag">ÁREA DO PRESTADOR</span>
+        <h1 style="font-size:24px;color:var(--p);margin:10px 0 20px">
+            Olá, Prestadora! Você tem <span id="novos">0</span> novos pedidos
+        </h1>
+
         <div class="grid2" style="grid-template-columns:1.3fr 1fr">
             <div>
                 <h3>Novos pedidos</h3><br>
                 <div id="pedidos"></div>
             </div>
+
             <div class="card">
                 <h3>Minha agenda</h3><br>
                 <div class="days">
@@ -26,11 +30,12 @@
                     <div class="day on">02</div>
                     <div class="day">03</div>
                 </div>
-                <p style="margin-top:14px"><b>08:00</b> <span class="tag">Limpeza residencial completo</span></p>
+                <p style="margin-top:14px"><b>08:00</b> <span class="tag">Limpeza residencial completa</span></p>
                 <p><b>14:00</b> <span class="tag">Passar roupa</span></p>
             </div>
         </div>
     </main>
+
     <script src="js/app.js"></script>
 </body>
 

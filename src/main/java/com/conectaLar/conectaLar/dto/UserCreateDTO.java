@@ -10,6 +10,10 @@ public class UserCreateDTO {
 
     private String celular;
 
+    private String senha;
+
+    private Identification identify;
+
     public UserCreateDTO(String nome, String email, String celular, String senha) {
         this.nome = nome;
         this.email = email;
@@ -17,7 +21,6 @@ public class UserCreateDTO {
         this.senha = senha;
     }
 
-    private String senha;
 
     public UserCreateDTO(){}
 
@@ -60,7 +63,5 @@ public class UserCreateDTO {
     public void setNome(String nome) {
         this.nome = nome;
     }
-
-    private Identification identify;
 
 }

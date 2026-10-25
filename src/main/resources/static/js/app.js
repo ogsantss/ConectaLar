@@ -9,7 +9,9 @@ um.onclick = e => {
     dd.classList.toggle('open')
 };
 document.onclick = () => dd.classList.remove('open');
-document.onkeydown = e => e.key === 'Escape' && dd.classList.remove('open');
+document.onkeydown = e => {
+    if (e.key === 'Escape') dd.classList.remove('open')
+};
 if (page === 'index') {
     const links = $$('nav a[data-s]'), secs = $$('main section[id]');
     const spy = new IntersectionObserver(es => es.forEach(e => {
@@ -99,7 +101,9 @@ const pages = {
             inp.value = '';
             box.scrollTop = box.scrollHeight
         };
-        inp.onkeydown = e => e.key === 'Enter' && $('#enviar').click()
+        inp.onkeydown = e => {
+            if (e.key === 'Enter') $('#enviar').click()
+        }
     },
     auth() {
         const mode = location.hash === '#cadastro' ? 1 : 0, t = $$('.tabs button');
@@ -110,7 +114,7 @@ const pages = {
         });
         $('form').onsubmit = e => {
             e.preventDefault();
-            const em = $('[type=email]').value, pw = $('[type=password]').value, er = $('.err');
+            const em = $('[type=email]').value, pw = $('.pw input').value, er = $('.err');
             er.textContent = !/^\S+@\S+\.\S+$/.test(em) ? 'E-mail inválido.' : pw.length < 6 ? 'A senha precisa de 6+ caracteres.' : '';
             if (!er.textContent) location.href = 'busca.html'
         }

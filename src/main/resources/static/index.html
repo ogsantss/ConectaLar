@@ -3,8 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>conectaLar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>conectaLar - Diaristas de confiança perto de você</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -15,9 +15,9 @@
             <h1>SUA CASA IMPECÁVEL COM <span>ZERO COMPLICAÇÃO.</span></h1>
             <p style="max-width:520px;margin-top:14px">Conectamos você às melhores diaristas da sua região em segundos.
                 Agendamento digital, pagamento seguro e garantia total de satisfação.</p>
-            <div class="cep"><input id="cep" placeholder="Digite seu cep: (Ex: 04845-200)"><button id="go"
-                    class="btn">Ver disponibilidade</button></div>
-            <div id="cepErr" class="err" style="color:#ffe"></div>
+            <div class="cep"><input id="cep" placeholder="Digite seu CEP (Ex: 04845-200)" aria-label="CEP" inputmode="numeric" autocomplete="postal-code">
+                <button type="button" id="go" class="btn">Ver disponibilidade</button></div>
+            <div id="cepErr" class="err" role="alert" style="color:#ffe"></div>
             <p style="margin-top:auto;opacity:.8">⌄ role para ver mais</p>
         </section>
         <section id="vantagens" class="sec">

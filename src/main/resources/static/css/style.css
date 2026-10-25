@@ -357,6 +357,57 @@ h2 {
     overflow: auto;
     flex: 1
 }
+.role {
+    border: 0;
+    padding: 0;
+    margin: 12px 0 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px
+}
+
+.role legend {
+    font-weight: 600;
+    padding: 0;
+    margin-bottom: 5px
+}
+
+.role-opt {
+    position: relative;
+    margin: 0;
+    font-weight: 500;
+    cursor: pointer
+}
+
+.role-opt input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    padding: 0
+}
+
+.role-opt span {
+    display: block;
+    text-align: center;
+    padding: 11px 12px;
+    border-radius: 8px;
+    background: #ececec;
+    border: 2px solid transparent
+}
+
+.role-opt input:checked + span {
+    background: #fff;
+    border-color: var(--p);
+    color: var(--p);
+    font-weight: 600
+}
+
+.role-opt input:focus-visible + span {
+    outline: 2px solid var(--pd);
+    outline-offset: 2px
+}
+
 
 .m {
     max-width: 65%;

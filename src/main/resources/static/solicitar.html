@@ -1,2 +1,59 @@
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>conectaLar</title><link rel="stylesheet" href="css/style.css"></head><body data-page="solicitar"><main class="wrap"><form id="f" class="grid2" style="grid-template-columns:1fr 1fr;align-items:start"><div class="card"><h2 style="text-align:center">Solicitar Serviço</h2><label>Tipo de Serviço</label><select name="tipo"><option>Limpeza Residencial</option><option>Passar Roupa</option><option>Organização</option></select><div style="display:flex;gap:10px"><div style="flex:1"><label>Data</label><input name="data" type="date"></div><div style="flex:1"><label>Horário</label><input type="time"></div></div><label>Endereço</label><input name="end" placeholder="Rua, número, bairro"><label>Observações</label><textarea rows="4" placeholder="Alguma instrução para a diarista?"></textarea></div>
-<div><div class="card"><div class="sum"><span>Serviço</span><b id="rs"></b></div><div class="sum"><span>Profissional</span><b>Maria Luiza</b></div><div class="sum"><span>Valor Estimado</span><b id="rv"></b></div></div><br><button class="btn full" style="padding:16px;font-size:18px">Aceitar pedido</button><br><br><button type="button" id="cancel" class="btn out full" style="padding:14px;font-size:18px">Cancelar</button></div></form></main><script src="js/app.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solicitar serviço - conectaLar</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body data-page="solicitar">
+    <main class="wrap">
+        <form id="f" class="grid2" style="grid-template-columns:1fr 1fr;align-items:start">
+            <div class="card">
+                <h2 style="text-align:center">Solicitar Serviço</h2>
+
+                <label for="tipo">Tipo de serviço</label>
+                <select id="tipo" name="tipo">
+                    <option>Limpeza Residencial</option>
+                    <option>Passar Roupa</option>
+                    <option>Organização</option>
+                </select>
+
+                <div style="display:flex;gap:10px">
+                    <div style="flex:1">
+                        <label for="data">Data</label>
+                        <input id="data" name="data" type="date">
+                    </div>
+                    <div style="flex:1">
+                        <label for="hora">Horário</label>
+                        <input id="hora" name="hora" type="time">
+                    </div>
+                </div>
+
+                <label for="end">Endereço</label>
+                <input id="end" name="end" placeholder="Rua, número, bairro" autocomplete="street-address">
+
+                <label for="obs">Observações</label>
+                <textarea id="obs" name="obs" rows="4" placeholder="Alguma instrução para a diarista?"></textarea>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="sum"><span>Serviço</span><b id="rs"></b></div>
+                    <div class="sum"><span>Profissional</span><b>Maria Luiza</b></div>
+                    <div class="sum"><span>Valor estimado</span><b id="rv"></b></div>
+                </div>
+                <br>
+                <button type="submit" class="btn full" style="padding:16px;font-size:18px">Enviar pedido</button>
+                <br><br>
+                <button type="button" id="cancel" class="btn out full" style="padding:14px;font-size:18px">Cancelar</button>
+            </div>
+        </form>
+    </main>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>

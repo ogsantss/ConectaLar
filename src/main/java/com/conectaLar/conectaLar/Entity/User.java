@@ -52,6 +52,10 @@ public class User {
     public User() {
     }
 
+    public Identification getIdentify() {
+        return identify;
+    }
+
     public long getId() {
         return id;
     }
