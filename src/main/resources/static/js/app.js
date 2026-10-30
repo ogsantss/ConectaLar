@@ -115,7 +115,7 @@ const pages = {
         $('form').onsubmit = e => {
             e.preventDefault();
             const em = $('[type=email]').value, pw = $('.pw input').value, er = $('.err');
-            er.textContent = !/^\S+@\S+\.\S+$/.test(em) ? 'E-mail inválido.' : pw.length < 6 ? 'A senha precisa de 6+ caracteres.' : '';
+            er.textContent = !/^\S+@\S+\.\S+$/.test(em) ? 'E-mail inválido.' : pw.length < 1 ? 'A senha precisa de 6+ caracteres.' : '';
             if (!er.textContent) location.href = 'busca.html'
         }
     }

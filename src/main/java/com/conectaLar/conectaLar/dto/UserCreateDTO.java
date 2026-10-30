@@ -14,7 +14,7 @@ public class UserCreateDTO {
 
     private Identification identify;
 
-    public UserCreateDTO(String nome, String email, String celular, String senha) {
+    public UserCreateDTO(String nome, String email, String celular) {
         this.nome = nome;
         this.email = email;
         this.celular = celular;

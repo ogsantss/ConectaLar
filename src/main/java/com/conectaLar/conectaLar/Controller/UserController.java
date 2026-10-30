@@ -1,6 +1,7 @@
 package com.conectaLar.conectaLar.controller;
 
 import com.conectaLar.conectaLar.dto.UserCreateDTO;
+import com.conectaLar.conectaLar.dto.UserResponseDTO;
 import com.conectaLar.conectaLar.entity.User;
 import com.conectaLar.conectaLar.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,21 @@ public class UserController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(usuarioSalvo);
+    }
+
+    @PostMapping("/login")
+    public UserResponseDTO login(@RequestBody User user) {
+        User usuarioEncontrado = userService.verificarLogin(user);
+        return new UserResponseDTO(usuarioEncontrado.getNome(),
+                usuarioEncontrado.getEmail(), usuarioEncontrado.getCelular(),
+                usuarioEncontrado.getIdentify());
+    }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public class UserNotFound extends RuntimeException {
+        public UserNotFound(String message) {
+            super(message);
+        }
     }
 
 }

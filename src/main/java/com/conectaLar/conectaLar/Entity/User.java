@@ -32,10 +32,6 @@ public class User {
     @Email
     private String email;
 
-    public void setIdentify(Identification identify) {
-        this.identify = identify;
-    }
-
     @Column(nullable = false, unique = true)
     @NotBlank
     @NumberFormat
@@ -55,6 +51,10 @@ public class User {
     public Identification getIdentify() {
         return identify;
     }
+    public void setIdentify(Identification identify) {
+        this.identify = identify;
+    }
+
 
     public long getId() {
         return id;

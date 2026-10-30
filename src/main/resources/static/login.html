@@ -12,12 +12,12 @@
     <main class="card auth">
         <div class="tabs">
             <button type="button" class="on">ENTRAR</button>
-            <button type="button">CADASTRAR</button>
+            <button type="button" id="cadastrar">CADASTRAR</button>
         </div>
 
         <h2 style="text-align:center">Acessar sua conta conectaLar</h2>
 
-        <form>
+        <form id="formLogin">
             <label for="email">E-mail</label>
             <input type="email" id="email" name="email" placeholder="E-mail" autocomplete="email" required>
 
@@ -28,11 +28,10 @@
             </div>
 
             <div class="err" role="alert" aria-live="polite"></div>
-            <button type="submit" class="btn full">ENTRAR</button>
+            <button type="submit" class="btn full" id="entrar">ENTRAR</button>
         </form>
     </main>
-
-    <script src="js/app.js"></script>
+    <script src="login.js"></script>
 </body>
 
 </html>

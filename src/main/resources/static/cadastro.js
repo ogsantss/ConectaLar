@@ -4,7 +4,13 @@ const celular = document.getElementById("celular");
 const senha = document.getElementById("senha");
 const termos = document.getElementById("termos");
 const erro = document.querySelector(".err");
-const cadastrar = document.getElementById("cadastrar");
+const entrar = document.getElementById("login");
+
+btnCadastrar.addEventListener("click", redirecionarLogin);
+
+function redirecionarLogin() {
+    window.location.href = "login.html";
+}
 
 cadastrar.addEventListener("click", cadastrarUsuario)
 
@@ -39,6 +45,7 @@ async function cadastrarUsuario() {
         alert("Não foi possivel cadastrar esse usuario. Status: " + response.status);
     } else {
         alert('Usuario cadastrado com sucesso!')
+        window.location.href = "login.html";
     }
 
 }
