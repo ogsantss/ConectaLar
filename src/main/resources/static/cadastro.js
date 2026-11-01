@@ -4,9 +4,9 @@ const celular = document.getElementById("celular");
 const senha = document.getElementById("senha");
 const termos = document.getElementById("termos");
 const erro = document.querySelector(".err");
-const entrar = document.getElementById("login");
+const btnEntrar = document.getElementById("login");
 
-btnCadastrar.addEventListener("click", redirecionarLogin);
+btnEntrar.addEventListener("click", redirecionarLogin);
 
 function redirecionarLogin() {
     window.location.href = "login.html";
