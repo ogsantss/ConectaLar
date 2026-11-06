@@ -14,7 +14,10 @@ public class UserResponseDTO {
 
     private Identification identify;
 
-    public UserResponseDTO(String nome, String email, String celular, Identification identify) {
+    private long id;
+
+    public UserResponseDTO(long id, String nome, String email, String celular, Identification identify) {
+        this.id = id;
         this.nome = nome;
         this.email = email;
         this.celular = celular;
@@ -22,8 +25,12 @@ public class UserResponseDTO {
         this.identify = identify;
     }
 
+    public long getId() {
+        return id;
+    }
 
-    public UserResponseDTO(){}
+    public UserResponseDTO() {
+    }
 
     public Identification getIdentify() {
         return identify;

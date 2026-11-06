@@ -32,7 +32,7 @@ public class UserController {
     @PostMapping("/login")
     public UserResponseDTO login(@RequestBody User user) {
         User usuarioEncontrado = userService.verificarLogin(user);
-        return new UserResponseDTO(usuarioEncontrado.getNome(),
+        return new UserResponseDTO(usuarioEncontrado.getId(),usuarioEncontrado.getNome(),
                 usuarioEncontrado.getEmail(), usuarioEncontrado.getCelular(),
                 usuarioEncontrado.getIdentify());
     }

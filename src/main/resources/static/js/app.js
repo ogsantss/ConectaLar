@@ -92,10 +92,17 @@ async function criarSolicitacao(solicitacao) {
     return simularEnvio('Criar solicitação', solicitacao);
 }
 
-async function enviarMensagem(mensagem) {
-    // O back end também vai precisar saber o destinatário da mensagem.
-    // return requisicaoApi('/mensagens', 'POST', mensagem);
-    return simularEnvio('Enviar mensagem', mensagem);
+// Chat: já integrado com o ChatController (/conversas).
+async function buscarConversas(usuarioId) {
+    return requisicaoApi(`/conversas?usuarioId=${usuarioId}`);
+}
+
+async function buscarMensagens(conversaId) {
+    return requisicaoApi(`/conversas/${conversaId}/mensagens`);
+}
+
+async function enviarMensagem(conversaId, mensagem) {
+    return requisicaoApi(`/conversas/${conversaId}/mensagens`, 'POST', mensagem);
 }
 
 
@@ -493,37 +500,141 @@ function iniciarSolicitar() {
 
 // ---------- Mensagens (mensagens.html) ----------
 
+// Estado da tela de chat: quem está logado, qual conversa está aberta e
+// quantas mensagens já foram desenhadas (para só redesenhar quando mudar).
+const chat = {
+    usuario: null,
+    conversaAtual: null,
+    totalMensagens: -1
+};
+
+// O login.js salva o usuário (com o id) no localStorage depois do login.
+function lerUsuarioLogado() {
+    const salvo = localStorage.getItem('usuario');
+    return salvo ? JSON.parse(salvo) : null;
+}
+
+// "Maria Aparecida" -> "MA", para a bolinha do contato.
+function iniciais(nome) {
+    return nome.split(' ').filter(Boolean).slice(0, 2)
+        .map(parte => parte[0].toUpperCase()).join('');
+}
+
+// Se eu sou o cliente, mostra o nome da diarista, e vice-versa.
+function nomeDoOutro(conversa) {
+    return conversa.clienteId === chat.usuario.id ? conversa.diaristaNome : conversa.clienteNome;
+}
+
+// Mensagens enviadas pelo usuário logado ganham a classe "me" (balão à direita).
+function desenharMensagens(mensagens) {
+    const lista = document.querySelector('#msgs');
+
+    lista.innerHTML = mensagens.map(m => {
+        const classe = m.remetenteId === chat.usuario.id ? 'm me' : 'm';
+        return `<div class="${classe}">${escaparHtml(m.conteudo)}</div>`;
+    }).join('');
+
+    // Rola a conversa até a mensagem mais recente.
+    lista.scrollTop = lista.scrollHeight;
+}
+
+async function carregarMensagens() {
+    if (!chat.conversaAtual) {
+        return;
+    }
+
+    try {
+        const mensagens = await buscarMensagens(chat.conversaAtual);
+
+        if (mensagens.length !== chat.totalMensagens) {
+            chat.totalMensagens = mensagens.length;
+            desenharMensagens(mensagens);
+        }
+    } catch (falha) {
+        console.error(falha);
+    }
+}
+
+async function abrirConversa(conversaId, elemento) {
+    document.querySelectorAll('#contatos div').forEach(div => div.classList.remove('on'));
+    elemento.classList.add('on');
+
+    chat.conversaAtual = conversaId;
+    chat.totalMensagens = -1;
+    await carregarMensagens();
+}
+
+async function desenharContatos() {
+    const contatos = document.querySelector('#contatos');
+    const conversas = await buscarConversas(chat.usuario.id);
+
+    if (conversas.length === 0) {
+        contatos.innerHTML = '<div>Nenhuma conversa ainda</div>';
+        return;
+    }
+
+    contatos.innerHTML = conversas.map(c => {
+        const nome = nomeDoOutro(c);
+        return `<div data-id="${c.id}"><span class="av">${escaparHtml(iniciais(nome))}</span>${escaparHtml(nome)}</div>`;
+    }).join('');
+
+    contatos.querySelectorAll('div').forEach(div => {
+        div.addEventListener('click', () => abrirConversa(Number(div.dataset.id), div));
+    });
+
+    // Já abre a primeira conversa da lista.
+    const primeiro = contatos.querySelector('div');
+    await abrirConversa(Number(primeiro.dataset.id), primeiro);
+}
+
 async function enviarTextoDoCampo() {
     const campoTexto = document.querySelector('#txt');
-    const listaMensagens = document.querySelector('#msgs');
     const texto = campoTexto.value.trim();
 
     if (!texto) {
         return;
     }
 
-    try {
-        await enviarMensagem({texto});
+    // Sem conversa aberta, a mensagem não tem para onde ir.
+    if (!chat.conversaAtual) {
+        alert('Você ainda não tem uma conversa aberta. Escolha um contato na lista.');
+        return;
+    }
 
-        listaMensagens.insertAdjacentHTML('beforeend', `<div class="m me">${escaparHtml(texto)}</div>`);
+    try {
+        // Mesmo formato do MensagemRequestDTO do Spring.
+        await enviarMensagem(chat.conversaAtual, {
+            remetenteId: chat.usuario.id,
+            conteudo: texto
+        });
         campoTexto.value = '';
-        // Rola a conversa até a mensagem mais recente.
-        listaMensagens.scrollTop = listaMensagens.scrollHeight;
+        await carregarMensagens();
     } catch (falha) {
         console.error(falha);
         alert('Não foi possível enviar a mensagem. Tente novamente.');
     }
 }
 
-function iniciarMensagens() {
-    selecionarUm('#contatos div');
+async function iniciarMensagens() {
+    chat.usuario = lerUsuarioLogado();
 
+    if (!chat.usuario) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    document.querySelector('#msgs').innerHTML = '';
     document.querySelector('#enviar').addEventListener('click', enviarTextoDoCampo);
     document.querySelector('#txt').addEventListener('keydown', evento => {
         if (evento.key === 'Enter') {
             enviarTextoDoCampo();
         }
     });
+
+    await desenharContatos();
+
+    // Busca mensagens novas a cada 3 segundos (as que a outra pessoa mandar).
+    setInterval(carregarMensagens, 3000);
 }
 
 // ---------- Login e cadastro (login.html e cadastro.html) ----------
