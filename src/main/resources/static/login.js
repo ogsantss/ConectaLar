@@ -30,15 +30,13 @@ formulario.addEventListener("submit", async function (evt) {
     } else {
         alert("Login efetuado com sucesso!")
         const responseJson = await response.json();
+        localStorage.setItem("usuario", JSON.stringify(responseJson));
         if (responseJson.identify === "CLIENT") {
             window.location.href = "index.html";
-            localStorage.setItem("usuario", JSON.stringify(responseJson));
         } else {
             window.location.href = "agenda.html";
-            localStorage.setItem("usuario", JSON.stringify(responseJson));
         }
     }
 
 
 })
-

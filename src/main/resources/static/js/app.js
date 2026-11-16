@@ -189,28 +189,102 @@ function animarAoAparecer(elementos) {
  * 3. HEADER E MENU
  * ======================================================================== */
 
-function criarHeader() {
-    // Solicitar serviço é coisa da cliente: a diarista não vê esse link.
-    const usuario = obterUsuarioLogado();
-    const linkServicos = usuario && usuario.identify === 'DIARIST'
-        ? ''
-        : '<a href="solicitar.html" data-p="solicitar">Serviços</a>';
+/* --------------------------------------------------------------------------
+ * Controle de acesso por perfil
+ *
+ * O perfil vem do campo "identify" do usuário salvo no localStorage pelo
+ * login.js (CLIENT ou DIARIST). Cada página lista os perfis que podem abri-la.
+ * Páginas em PAGINAS_PUBLICAS também abrem para quem não está logado.
+ * ------------------------------------------------------------------------ */
 
-    document.body.insertAdjacentHTML('afterbegin', `
-        <header>
-            <a class="logo" href="index.html#home">🏠 conectaLar</a>
-            <nav>
-                ${linkServicos}
+const PERFIS_POR_PAGINA = {
+    index: ['CLIENT'],
+    busca: ['CLIENT'],
+    perfil: ['CLIENT'],
+    solicitar: ['CLIENT'],
+    solicitacoes: ['CLIENT'],
+    agenda: ['DIARIST'],
+    mensagens: ['CLIENT', 'DIARIST']
+};
+
+const PAGINAS_PUBLICAS = ['index', 'login', 'cadastro'];
+
+// Para onde mandar cada perfil quando ele tenta abrir uma tela que não é dele.
+const PAGINA_INICIAL_DO_PERFIL = {
+    CLIENT: 'index.html',
+    DIARIST: 'agenda.html'
+};
+
+// Devolve true se a página pode ser exibida. Caso contrário, redireciona
+// e devolve false (quem chamou deve parar a inicialização).
+function validarAcesso(pagina) {
+    const perfisPermitidos = PERFIS_POR_PAGINA[pagina];
+
+    // login, cadastro e páginas desconhecidas não têm restrição de perfil.
+    if (!perfisPermitidos) {
+        return true;
+    }
+
+    const usuario = obterUsuarioLogado();
+
+    if (!usuario) {
+        if (PAGINAS_PUBLICAS.includes(pagina)) {
+            return true;
+        }
+        window.location.replace('login.html');
+        return false;
+    }
+
+    if (perfisPermitidos.includes(usuario.identify)) {
+        return true;
+    }
+
+    const destino = PAGINA_INICIAL_DO_PERFIL[usuario.identify];
+
+    if (destino) {
+        window.location.replace(destino);
+    } else {
+        // Perfil inválido no localStorage: limpa e volta para o login.
+        localStorage.removeItem('usuario');
+        window.location.replace('login.html');
+    }
+    return false;
+}
+
+function sair() {
+    localStorage.removeItem('usuario');
+    window.location.href = 'login.html';
+}
+
+// Diarista vê Agenda e Mensagens; cliente (ou visitante) vê o menu da Home.
+function criarHeader(usuario) {
+    const ehDiarista = usuario && usuario.identify === 'DIARIST';
+
+    const menuDiarista = `
+                <a href="agenda.html" data-p="agenda">Agenda</a>
+                <a href="mensagens.html" data-p="mensagens">Mensagens</a>`;
+
+    const menuCliente = `
+                <a href="solicitar.html" data-p="solicitar">Serviços</a>
                 <a href="index.html#home" data-s="home">Home</a>
                 <a href="index.html#vantagens" data-s="vantagens">Vantagens</a>
                 <a href="index.html#profissionais" data-s="profissionais">Profissionais</a>
                 <a href="index.html#avaliacoes" data-s="avaliacoes">Avaliações</a>
+                ${usuario ? '<a href="mensagens.html" data-p="mensagens">Mensagens</a>' : ''}`;
+
+    const menuConta = usuario
+        ? '<a href="#" id="sair">Sair</a>'
+        : '<a href="login.html">Conectar</a><a href="cadastro.html">Criar conta</a>';
+
+    document.body.insertAdjacentHTML('afterbegin', `
+        <header>
+            <a class="logo" href="${ehDiarista ? 'agenda.html' : 'index.html#home'}">🏠 conectaLar</a>
+            <nav>${ehDiarista ? menuDiarista : menuCliente}
             </nav>
             <div class="menu">
                 <button class="user" id="um" aria-label="Conta">👤</button>
                 <div class="drop" id="dd">
-                    <a href="login.html">Conectar</a>
-                    <a href="cadastro.html">Criar conta</a>
+                    ${menuConta}
                 </div>
             </div>
         </header>
@@ -220,6 +294,15 @@ function criarHeader() {
 function configurarMenuDaConta() {
     const botaoConta = document.querySelector('#um');
     const menuConta = document.querySelector('#dd');
+
+    const linkSair = document.querySelector('#sair');
+
+    if (linkSair) {
+        linkSair.addEventListener('click', evento => {
+            evento.preventDefault();
+            sair();
+        });
+    }
 
     botaoConta.addEventListener('click', evento => {
         // Sem isso, o clique também chegaria ao document, que fecha o menu.
@@ -826,7 +909,11 @@ const INICIALIZADORES_DE_PAGINA = {
 async function iniciarAplicacao() {
     const pagina = document.body.dataset.page;
 
-    criarHeader();
+    if (!validarAcesso(pagina)) {
+        return;
+    }
+
+    criarHeader(obterUsuarioLogado());
     configurarMenuDaConta();
 
     if (pagina !== 'index') {
