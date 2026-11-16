@@ -6,8 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.conectaLar.conectaLar.Enums.Identification;
-import com.conectaLar.conectaLar.Enums.StatusSolicitacao;
+import com.conectaLar.conectaLar.enums.Identification;
+import com.conectaLar.conectaLar.enums.StatusSolicitacao;
 import com.conectaLar.conectaLar.dto.SolicitacaoCreateDTO;
 import com.conectaLar.conectaLar.dto.SolicitacaoResponseDTO;
 import com.conectaLar.conectaLar.entity.Solicitacao;

@@ -1,4 +1,4 @@
-package com.conectaLar.conectaLar.Enums;
+package com.conectaLar.conectaLar.enums;
 
 public enum Identification {
     CLIENT("Cliente", "busca.html"),

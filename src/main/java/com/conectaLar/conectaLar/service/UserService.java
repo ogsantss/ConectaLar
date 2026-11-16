@@ -1,8 +1,10 @@
 package com.conectaLar.conectaLar.service;
 
-import com.conectaLar.conectaLar.Enums.Identification;
+import com.conectaLar.conectaLar.dto.LoginRequestDTO;
 import com.conectaLar.conectaLar.dto.UserCreateDTO;
+import com.conectaLar.conectaLar.dto.UserResponseDTO;
 import com.conectaLar.conectaLar.entity.User;
+import com.conectaLar.conectaLar.enums.Identification;
 import com.conectaLar.conectaLar.exception.UserNotFound;
 import com.conectaLar.conectaLar.repository.UserRepository;
 
@@ -11,11 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
-
 
     private final UserRepository userRepository;
 
@@ -23,33 +23,48 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-
-    public UserCreateDTO save(User usuario) {
-        String email = usuario.getEmail();
-        usuario.setEmail(email.toLowerCase());
-        User user = userRepository.save(usuario);
-        return new UserCreateDTO(user.getNome(), user.getEmail(), user.getCelular());
+    public UserResponseDTO register(UserCreateDTO userCreateDTO) {
+        User savedUser = userRepository.save(toEntity(userCreateDTO));
+        return toResponseDto(savedUser);
     }
-    public User verificarLogin(User user){
-        String email = user.getEmail();
-        String senha = user.getSenha();
-        Optional<User> optionalUser = userRepository.findByEmailAndSenha(email.toLowerCase(),senha);
-        if(optionalUser.isEmpty()){
-        throw new UserNotFound("Usuário não encontrado.");
-        }
-        return optionalUser.get();
-        }
 
-    public User buscarDiarista(long id) {
+    public UserResponseDTO authenticate(LoginRequestDTO loginRequestDTO) {
+        return userRepository.findByEmailAndSenha(loginRequestDTO.email().toLowerCase(), loginRequestDTO.senha())
+                .map(this::toResponseDto)
+                .orElseThrow(() -> new UserNotFound("Usuário não encontrado."));
+    }
+
+    public List<UserResponseDTO> listDiarists() {
+        return userRepository.findByIdentifyOrderByNomeAsc(Identification.DIARIST).stream()
+                .map(this::toPublicDto)
+                .toList();
+    }
+
+    public UserResponseDTO findDiaristById(long id) {
         return userRepository.findById(id)
-                .filter(usuario -> usuario.getIdentify() == Identification.DIARIST)
+                .filter(user -> user.getIdentify() == Identification.DIARIST)
+                .map(this::toPublicDto)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Diarista não encontrada."));
     }
 
-    public List<User> listarDiaristas() {
-        return userRepository.findByIdentifyOrderByNomeAsc(Identification.DIARIST);
+    // O e-mail é salvo em minúsculas para o login não depender de como a pessoa digitou.
+    private User toEntity(UserCreateDTO userCreateDTO) {
+        return new User(userCreateDTO.getNome(), userCreateDTO.getEmail().toLowerCase(), userCreateDTO.getCelular(),
+                userCreateDTO.getSenha(), userCreateDTO.getIdentify());
     }
 
+    // Dados completos: só para o próprio usuário (resposta do cadastro e do login).
+    private UserResponseDTO toResponseDto(User user) {
+        return new UserResponseDTO(user.getId(), user.getNome(), user.getEmail(), user.getCelular(), user.getIdentify());
+    }
 
+    // Dados públicos: e-mail e celular não são expostos a qualquer visitante.
+    private UserResponseDTO toPublicDto(User user) {
+        UserResponseDTO response = new UserResponseDTO();
+        response.setId(user.getId());
+        response.setNome(user.getNome());
+        response.setIdentify(user.getIdentify());
+        return response;
+    }
 
 }

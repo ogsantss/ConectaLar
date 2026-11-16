@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import com.conectaLar.conectaLar.Enums.StatusSolicitacao;
-import com.conectaLar.conectaLar.Enums.TipoServico;
+import com.conectaLar.conectaLar.enums.StatusSolicitacao;
+import com.conectaLar.conectaLar.enums.TipoServico;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

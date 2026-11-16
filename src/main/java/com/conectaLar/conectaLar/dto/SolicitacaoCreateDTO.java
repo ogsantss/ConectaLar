@@ -3,7 +3,7 @@ package com.conectaLar.conectaLar.dto;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import com.conectaLar.conectaLar.Enums.TipoServico;
+import com.conectaLar.conectaLar.enums.TipoServico;
 
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;

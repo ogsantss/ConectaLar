@@ -1,4 +1,4 @@
-package com.conectaLar.conectaLar.Controller;
+package com.conectaLar.conectaLar.controller;
 
 import com.conectaLar.conectaLar.dto.ConversaRequestDTO;
 import com.conectaLar.conectaLar.dto.ConversaResponseDTO;

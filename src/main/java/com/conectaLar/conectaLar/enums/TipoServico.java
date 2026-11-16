@@ -1,4 +1,4 @@
-package com.conectaLar.conectaLar.Enums;
+package com.conectaLar.conectaLar.enums;
 
 import java.math.BigDecimal;
 

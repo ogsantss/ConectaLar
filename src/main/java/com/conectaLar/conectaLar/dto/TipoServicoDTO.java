@@ -2,7 +2,7 @@ package com.conectaLar.conectaLar.dto;
 
 import java.math.BigDecimal;
 
-import com.conectaLar.conectaLar.Enums.TipoServico;
+import com.conectaLar.conectaLar.enums.TipoServico;
 
 public class TipoServicoDTO {
     private String codigo;

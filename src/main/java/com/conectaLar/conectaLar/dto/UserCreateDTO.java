@@ -1,28 +1,30 @@
 package com.conectaLar.conectaLar.dto;
 
-import com.conectaLar.conectaLar.Enums.Identification;
+import com.conectaLar.conectaLar.enums.Identification;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 
 public class UserCreateDTO {
+    @NotBlank
     private String nome;
 
+    @NotBlank
+    @Email
     private String email;
 
+    @NotBlank
     private String celular;
 
+    @NotBlank
     private String senha;
 
+    @NotNull
     private Identification identify;
 
-    public UserCreateDTO(String nome, String email, String celular) {
-        this.nome = nome;
-        this.email = email;
-        this.celular = celular;
-        this.senha = senha;
+    public UserCreateDTO() {
     }
-
-
-    public UserCreateDTO(){}
 
     public Identification getIdentify() {
         return identify;

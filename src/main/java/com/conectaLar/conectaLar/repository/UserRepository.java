@@ -2,7 +2,7 @@ package com.conectaLar.conectaLar.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.conectaLar.conectaLar.Enums.Identification;
+import com.conectaLar.conectaLar.enums.Identification;
 import com.conectaLar.conectaLar.entity.User;
 
 import java.util.List;

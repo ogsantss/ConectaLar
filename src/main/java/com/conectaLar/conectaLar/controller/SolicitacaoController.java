@@ -1,4 +1,4 @@
-package com.conectaLar.conectaLar.Controller;
+package com.conectaLar.conectaLar.controller;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.conectaLar.conectaLar.Enums.TipoServico;
+import com.conectaLar.conectaLar.enums.TipoServico;
 import com.conectaLar.conectaLar.dto.SolicitacaoCreateDTO;
 import com.conectaLar.conectaLar.dto.SolicitacaoResponseDTO;
 import com.conectaLar.conectaLar.dto.TipoServicoDTO;

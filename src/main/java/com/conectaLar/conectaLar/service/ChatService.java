@@ -1,6 +1,6 @@
 package com.conectaLar.conectaLar.service;
 
-import com.conectaLar.conectaLar.Enums.Identification;
+import com.conectaLar.conectaLar.enums.Identification;
 import com.conectaLar.conectaLar.dto.ConversaRequestDTO;
 import com.conectaLar.conectaLar.dto.ConversaResponseDTO;
 import com.conectaLar.conectaLar.dto.MensagemRequestDTO;

@@ -1,8 +1,9 @@
 package com.conectaLar.conectaLar.dto;
 
-import com.conectaLar.conectaLar.Enums.Identification;
+import com.conectaLar.conectaLar.enums.Identification;
 
-
+// O que o back devolve sobre um usuário. Nunca inclui a senha.
+// O id é obrigatório: o front salva no localStorage e usa como clienteId e remetenteId.
 public class UserResponseDTO {
     private long id;
 
@@ -12,25 +13,18 @@ public class UserResponseDTO {
 
     private String celular;
 
-    private String senha;
-
     private Identification identify;
 
-    public UserResponseDTO(String nome, String email, String celular, Identification identify) {
+    public UserResponseDTO(long id, String nome, String email, String celular, Identification identify) {
+        this.id = id;
         this.nome = nome;
         this.email = email;
         this.celular = celular;
-        this.senha = senha;
         this.identify = identify;
     }
 
-
-    public UserResponseDTO(long id, String nome, String email, String celular, Identification identify) {
-        this(nome, email, celular, identify);
-        this.id = id;
+    public UserResponseDTO() {
     }
-
-    public UserResponseDTO(){}
 
     public long getId() {
         return id;
@@ -46,14 +40,6 @@ public class UserResponseDTO {
 
     public void setIdentify(Identification identify) {
         this.identify = identify;
-    }
-
-    public String getSenha() {
-        return senha;
-    }
-
-    public void setSenha(String senha) {
-        this.senha = senha;
     }
 
     public String getCelular() {

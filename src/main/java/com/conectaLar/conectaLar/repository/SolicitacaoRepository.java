@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.conectaLar.conectaLar.Enums.StatusSolicitacao;
+import com.conectaLar.conectaLar.enums.StatusSolicitacao;
 import com.conectaLar.conectaLar.entity.Solicitacao;
 
 public interface SolicitacaoRepository extends JpaRepository<Solicitacao, Long> {
