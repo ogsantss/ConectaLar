@@ -65,9 +65,8 @@ async function buscarProfissionais() {
     return lerDadosSimulados('profissionais');
 }
 
-async function buscarPedidos() {
-    // return requisicaoApi('/pedidos');
-    return lerDadosSimulados('pedidos');
+async function buscarPedidos(idDiarista) {
+    return requisicaoApi(`/solicitacoes/diarista/${encodeURIComponent(idDiarista)}`);
 }
 
 async function buscarSolicitacoes(idCliente) {
@@ -89,14 +88,12 @@ async function buscarDiarista(idDiarista) {
     return diarista;
 }
 
-async function aceitarPedido(idPedido) {
-    // return requisicaoApi(`/pedidos/${idPedido}/aceitar`, 'POST');
-    return simularEnvio('Aceitar pedido', {idPedido});
+async function aceitarPedido(idPedido, idDiarista) {
+    return requisicaoApi(`/solicitacoes/${encodeURIComponent(idPedido)}/aceitar`, 'PATCH', {diaristaId: idDiarista});
 }
 
-async function recusarPedido(idPedido) {
-    // return requisicaoApi(`/pedidos/${idPedido}/recusar`, 'POST');
-    return simularEnvio('Recusar pedido', {idPedido});
+async function recusarPedido(idPedido, idDiarista) {
+    return requisicaoApi(`/solicitacoes/${encodeURIComponent(idPedido)}/recusar`, 'PATCH', {diaristaId: idDiarista});
 }
 
 async function criarSolicitacao(solicitacao) {
@@ -471,17 +468,35 @@ async function iniciarPerfil() {
 
 // ---------- Agenda (agenda.html) ----------
 
+// Pedido pendente mostra os botões; nos outros status a diarista já decidiu, então mostra só a tag.
+function criarAcoesDoPedido(pedido) {
+    if (pedido.status === 'PENDENTE') {
+        return `
+            <button class="btn out rec">Recusar</button>
+            <button class="btn ac">Aceitar</button>
+        `;
+    }
+
+    const exibicao = EXIBICAO_DO_STATUS[pedido.status];
+    return `<span class="tag ${exibicao.classe}">${exibicao.texto}</span>`;
+}
+
 function criarCartaoPedido(pedido) {
+    const observacoes = pedido.observacoes
+        ? `<br><small>Obs.: ${escaparHtml(pedido.observacoes)}</small>`
+        : '';
+
     return `
         <div class="req" data-id="${escaparHtml(pedido.id)}">
             <div>
                 <b>${escaparHtml(pedido.titulo)}</b><br>
-                <small>${escaparHtml(pedido.detalhes)}</small>
+                <small>Cliente: ${escaparHtml(pedido.cliente)}</small><br>
+                <small>${escaparHtml(formatarDataHora(pedido.data, pedido.hora))} · ${escaparHtml(pedido.endereco)}</small>
+                ${observacoes}
             </div>
             <div>
-                <b>${escaparHtml(pedido.valor)}</b><br>
-                <button class="btn out rec">Recusar</button>
-                <button class="btn ac">Aceitar</button>
+                <b>${escaparHtml(formatarMoeda(pedido.valor))}</b><br>
+                ${criarAcoesDoPedido(pedido)}
             </div>
         </div>
     `;
@@ -493,11 +508,6 @@ function atualizarContadorDePedidos() {
     document.querySelector('#novos').textContent = pedidosNovos.length;
 }
 
-function marcarPedidoComoConfirmado(cartao, botaoAceitar) {
-    botaoAceitar.insertAdjacentHTML('afterend', '<span class="tag ok">Confirmado</span>');
-    cartao.querySelectorAll('button').forEach(botao => botao.remove());
-}
-
 async function tratarCliqueNoPedido(evento) {
     const botao = evento.target;
     const cartao = botao.closest('.req');
@@ -506,14 +516,20 @@ async function tratarCliqueNoPedido(evento) {
         return;
     }
 
+    const idDiarista = obterUsuarioLogado().id;
+    let pedidoAtualizado;
+
     try {
         if (botao.classList.contains('rec')) {
-            await recusarPedido(cartao.dataset.id);
-            cartao.remove();
+            pedidoAtualizado = await recusarPedido(cartao.dataset.id, idDiarista);
         } else if (botao.classList.contains('ac')) {
-            await aceitarPedido(cartao.dataset.id);
-            marcarPedidoComoConfirmado(cartao, botao);
+            pedidoAtualizado = await aceitarPedido(cartao.dataset.id, idDiarista);
+        } else {
+            return;
         }
+
+        // Redesenha o card com o que o back devolveu: os botões dão lugar à tag do novo status.
+        cartao.outerHTML = criarCartaoPedido(pedidoAtualizado);
         atualizarContadorDePedidos();
     } catch (falha) {
         console.error(falha);
@@ -530,7 +546,13 @@ async function iniciarAgenda() {
     // inclusive os que ainda serão criados (técnica chamada delegação de eventos).
     container.addEventListener('click', tratarCliqueNoPedido);
 
-    const pedidos = await buscarPedidos();
+    const usuario = obterUsuarioLogado();
+    if (!usuario) {
+        container.innerHTML = '<p>Entre na sua conta para ver seus pedidos.</p>';
+        return;
+    }
+
+    const pedidos = await buscarPedidos(usuario.id);
 
     container.innerHTML = pedidos.map(criarCartaoPedido).join('');
     atualizarContadorDePedidos();

@@ -1,19 +1,18 @@
 package com.conectaLar.conectaLar.service;
 
-import java.util.List;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-
-import com.conectaLar.conectaLar.enums.Identification;
-import com.conectaLar.conectaLar.enums.StatusSolicitacao;
 import com.conectaLar.conectaLar.dto.SolicitacaoCreateDTO;
 import com.conectaLar.conectaLar.dto.SolicitacaoResponseDTO;
 import com.conectaLar.conectaLar.entity.Solicitacao;
 import com.conectaLar.conectaLar.entity.User;
+import com.conectaLar.conectaLar.enums.Identification;
+import com.conectaLar.conectaLar.enums.StatusSolicitacao;
 import com.conectaLar.conectaLar.repository.SolicitacaoRepository;
 import com.conectaLar.conectaLar.repository.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @Service
 public class SolicitacaoService {
@@ -71,4 +70,26 @@ public class SolicitacaoService {
                 .filter(usuario -> usuario.getIdentify() == tipoEsperado)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, mensagemDeErro));
     }
+
+    public SolicitacaoResponseDTO aceitar(Long solicitacaoId, Long diaristaId) {
+        return decidirSolicitacao(solicitacaoId, diaristaId, StatusSolicitacao.ACEITA);
+    }
+    public SolicitacaoResponseDTO recusar(Long solicitacaoId, Long diaristaId) {
+        return decidirSolicitacao(solicitacaoId, diaristaId, StatusSolicitacao.RECUSADA);
+    }
+
+    private SolicitacaoResponseDTO decidirSolicitacao(Long solicitacaoId, Long diaristaId, StatusSolicitacao novoStatus) {
+        Solicitacao solicitacao = solicitacaoRepository.findById(solicitacaoId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Essa solicitação não existe."));
+        if (solicitacao.getDiarista().getId() != diaristaId) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Essa solicitação não pertence a essa diarista.");
+        }
+        if (solicitacao.getStatus() != StatusSolicitacao.PENDENTE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Essa solicitação não está pendente. Status Solicitação: "
+                    + solicitacao.getStatus());
+        }
+        solicitacao.setStatus(novoStatus);
+        return new SolicitacaoResponseDTO(solicitacaoRepository.save(solicitacao));
+    }
+
 }

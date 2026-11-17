@@ -3,14 +3,9 @@ package com.conectaLar.conectaLar.controller;
 import java.util.Arrays;
 import java.util.List;
 
+import com.conectaLar.conectaLar.dto.SolicitacaoDecisaoRequestDTO;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.conectaLar.conectaLar.enums.TipoServico;
 import com.conectaLar.conectaLar.dto.SolicitacaoCreateDTO;
@@ -49,5 +44,15 @@ public class SolicitacaoController {
     @GetMapping("/diarista/{diaristaId}")
     public List<SolicitacaoResponseDTO> listarDaDiarista(@PathVariable long diaristaId) {
         return solicitacaoService.listarDaDiarista(diaristaId);
+    }
+
+    @PatchMapping("/{solicitacaoId}/aceitar")
+    public SolicitacaoResponseDTO aceitar(@PathVariable Long solicitacaoId, @Valid @RequestBody SolicitacaoDecisaoRequestDTO dados) {
+        return solicitacaoService.aceitar(solicitacaoId, dados.diaristaId());
+    }
+
+    @PatchMapping("/{solicitacaoId}/recusar")
+    public SolicitacaoResponseDTO recusar(@PathVariable Long solicitacaoId, @Valid @RequestBody SolicitacaoDecisaoRequestDTO dados) {
+        return solicitacaoService.recusar(solicitacaoId, dados.diaristaId());
     }
 }
