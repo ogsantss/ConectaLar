@@ -58,11 +58,8 @@ async function simularEnvio(descricao, dados) {
     console.info(`[simulação] ${descricao}`, dados);
 }
 
-// Por enquanto as diaristas vêm do data.json, não do banco.
-// Para voltar a usar o banco, troque pela linha comentada.
 async function buscarProfissionais() {
-    // return requisicaoApi('/usuarios/diaristas');
-    return lerDadosSimulados('profissionais');
+    return requisicaoApi('/usuarios/diaristas');
 }
 
 async function buscarPedidos(idDiarista) {
@@ -78,14 +75,7 @@ async function buscarTiposDeServico() {
 }
 
 async function buscarDiarista(idDiarista) {
-    // return requisicaoApi(`/usuarios/diaristas/${encodeURIComponent(idDiarista)}`);
-    const profissionais = await lerDadosSimulados('profissionais');
-    const diarista = profissionais.find(profissional => String(profissional.id) === String(idDiarista));
-
-    if (!diarista) {
-        throw new Error(`Diarista ${idDiarista} não está no data.json`);
-    }
-    return diarista;
+    return requisicaoApi(`/usuarios/diaristas/${encodeURIComponent(idDiarista)}`);
 }
 
 async function aceitarPedido(idPedido, idDiarista) {
@@ -376,13 +366,14 @@ function configurarCampoCep() {
 }
 
 function criarCartaoProfissional(profissional) {
+    // notas e avaliações, serviços e preços comentados pois não estão sendo devolvidas pelo back ainda
+    // <small>★ ${escaparHtml(profissional.nota)} · ${escaparHtml(profissional.avaliacoes)} avaliações</small><br>
+    // <span class="tag">${escaparHtml(profissional.servicos)}</span>
+    // <p style="margin:10px 0"><b>R$ ${escaparHtml(profissional.preco)}/diária</b></p>
     return `
         <div class="card rev">
             <div class="av" style="margin-bottom:10px">${escaparHtml(iniciais(profissional.nome))}</div>
             <b>${escaparHtml(profissional.nome)}</b><br>
-            <small>★ ${escaparHtml(profissional.nota)} · ${escaparHtml(profissional.avaliacoes)} avaliações</small><br>
-            <span class="tag">${escaparHtml(profissional.servicos)}</span>
-            <p style="margin:10px 0"><b>R$ ${escaparHtml(profissional.preco)}/diária</b></p>
             <a class="btn full" href="perfil.html?id=${escaparHtml(profissional.id)}">Ver perfil</a>
         </div>
     `;
@@ -409,15 +400,17 @@ async function iniciarHome() {
 function criarItemDaBusca(profissional, indice) {
     // O primeiro profissional da lista já começa selecionado.
     const classeSelecionado = indice === 0 ? 'on' : '';
+    // Nota, Avaliações e distancias comentados pois não estão sendo utilizadas ainda.
+    // <small>★ ${escaparHtml(profissional.nota)} · ${escaparHtml(profissional.avaliacoes)} avaliações</small><br>
+    // <small>(${escaparHtml(profissional.distancia)})</small><br>
+    // <span class="tag">${escaparHtml(profissional.servicos)}</span><br>
+    // <b>R$ ${escaparHtml(profissional.preco)}/diária</b>
 
     return `
         <div class="pro ${classeSelecionado}">
             <div class="av">${escaparHtml(iniciais(profissional.nome))}</div>
             <div>
-                <b>${escaparHtml(profissional.nome)}</b> <small>(${escaparHtml(profissional.distancia)})</small><br>
-                <small>★ ${escaparHtml(profissional.nota)} · ${escaparHtml(profissional.avaliacoes)} avaliações</small><br>
-                <span class="tag">${escaparHtml(profissional.servicos)}</span><br>
-                <b>R$ ${escaparHtml(profissional.preco)}/diária</b>
+                <b>${escaparHtml(profissional.nome)}</b>
             </div>
             <a class="btn" href="perfil.html?id=${escaparHtml(profissional.id)}">Ver perfil</a>
         </div>
@@ -456,8 +449,9 @@ async function iniciarPerfil() {
         const diarista = await buscarDiarista(idDiarista);
         campoNome.textContent = diarista.nome;
         avatar.textContent = iniciais(diarista.nome);
-        document.querySelector('#notaDiarista').textContent =
-            `★ ${diarista.nota} (${diarista.avaliacoes} avaliações)`;
+        // notas da diarista, comentados pois não estão implementados ainda
+        // document.querySelector('#notaDiarista').textContent =
+        //     `★ ${diarista.nota} (${diarista.avaliacoes} avaliações)`;
     } catch (falha) {
         console.error(falha);
         campoNome.textContent = 'Diarista não encontrada';
