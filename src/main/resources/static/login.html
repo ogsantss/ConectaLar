@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Entrar - conectaLar</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body data-page="login">
+    <main class="card auth">
+        <div class="tabs">
+            <button type="button" class="on">ENTRAR</button>
+            <button type="button" id="cadastrar">CADASTRAR</button>
+        </div>
+
+        <h2 style="text-align:center">Acessar sua conta conectaLar</h2>
+
+        <form id="formLogin">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" name="email" placeholder="E-mail" autocomplete="email" required>
+
+            <label for="senha">Senha</label>
+            <div class="pw">
+                <input type="password" id="senha" name="senha" placeholder="Senha" autocomplete="current-password" required>
+                <span role="button" tabindex="0" aria-label="Mostrar senha">👁</span>
+            </div>
+
+            <div class="err" role="alert" aria-live="polite"></div>
+            <button type="submit" class="btn full" id="entrar">ENTRAR</button>
+        </form>
+    </main>
+    <script src="login.js"></script>
+</body>
+
+</html>

@@ -1,23 +1,8 @@
-package com.conectaLar.conectaLar.Entity;
+package com.conectaLar.conectaLar.entity;
 
-import java.security.Identity;
 
-import org.springframework.format.annotation.NumberFormat;
-
-import com.conectaLar.conectaLar.Enums.Identification;
-
-import jakarta.*;
-import jakarta.annotation.Nullable;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import com.conectaLar.conectaLar.enums.Identification;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "usuarios")
@@ -27,24 +12,15 @@ public class User {
     private long id;
 
     @Column(nullable = false)
-    @NotBlank
     private String nome;
 
     @Column(nullable = false, unique = true)
-    @Email
     private String email;
 
-    public void setIdentify(Identification identify) {
-        this.identify = identify;
-    }
-
     @Column(nullable = false, unique = true)
-    @NotBlank
-    @NumberFormat
     private String celular;
 
     @Column(nullable = false)
-    @NotBlank
     private String senha;
 
     @Enumerated(EnumType.STRING)
@@ -53,6 +29,23 @@ public class User {
 
     public User() {
     }
+
+    public User(String nome, String email, String celular, String senha, Identification identify) {
+        this.nome = nome;
+        this.email = email;
+        this.celular = celular;
+        this.senha = senha;
+        this.identify = identify;
+    }
+
+    public Identification getIdentify() {
+        return identify;
+    }
+
+    public void setIdentify(Identification identify) {
+        this.identify = identify;
+    }
+
 
     public long getId() {
         return id;
