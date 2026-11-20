@@ -3,16 +3,11 @@ package com.conectaLar.conectaLar.controller;
 import com.conectaLar.conectaLar.dto.LoginRequestDTO;
 import com.conectaLar.conectaLar.dto.UserCreateDTO;
 import com.conectaLar.conectaLar.dto.UserResponseDTO;
+import com.conectaLar.conectaLar.enums.Zona;
 import com.conectaLar.conectaLar.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -39,8 +34,8 @@ public class UserController {
 
     // Usado pela Home e pela Busca para listar as profissionais cadastradas.
     @GetMapping("/diaristas")
-    public List<UserResponseDTO> listDiarists() {
-        return userService.listDiarists();
+    public List<UserResponseDTO> listDiarists(@RequestParam(required = false) Zona zona) {
+        return userService.listDiarists(zona);
     }
 
     // Usado pelo Perfil e pela tela Solicitar Serviço para mostrar o nome da profissional.

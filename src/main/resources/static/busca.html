@@ -11,13 +11,16 @@
 <body data-page="busca">
     <main class="wrap">
         <div class="card" style="display:flex;gap:10px;margin-bottom:16px">
-            <input aria-label="Localização (CEP)" placeholder="Localização: 04845-200">
-            <select aria-label="Tipo de serviço">
-                <option>Limpeza residencial</option>
-                <option>Passar roupa</option>
+            <select id="filtroZona" aria-label="Zona">
+                <option value="">Todas as zonas</option>
+                <option value="NORTE">Zona Norte</option>
+                <option value="SUL">Zona Sul</option>
+                <option value="LESTE">Zona Leste</option>
+                <option value="OESTE">Zona Oeste</option>
             </select>
-            <input type="date" aria-label="Data">
-            <button type="button" class="btn">Buscar</button>
+            <!-- Opções carregadas de GET /solicitacoes/tipos (iniciarBusca). -->
+            <select id="filtroServico" aria-label="Tipo de serviço"></select>
+            <button type="button" id="btnBuscar" class="btn">Buscar</button>
         </div>
 
         <div class="grid2" style="grid-template-columns:1fr 1.6fr">

@@ -58,8 +58,10 @@ async function simularEnvio(descricao, dados) {
     console.info(`[simulação] ${descricao}`, dados);
 }
 
-async function buscarProfissionais() {
-    return requisicaoApi('/usuarios/diaristas');
+// Sem zona, lista todas as diaristas; com zona, o back filtra (?zona=NORTE).
+async function buscarProfissionais(zona) {
+    const filtro = zona ? `?zona=${encodeURIComponent(zona)}` : '';
+    return requisicaoApi(`/usuarios/diaristas${filtro}`);
 }
 
 async function buscarPedidos(idDiarista) {
@@ -402,30 +404,41 @@ function criarItemDaBusca(profissional, indice) {
     const classeSelecionado = indice === 0 ? 'on' : '';
     // Nota, Avaliações e distancias comentados pois não estão sendo utilizadas ainda.
     // <small>★ ${escaparHtml(profissional.nota)} · ${escaparHtml(profissional.avaliacoes)} avaliações</small><br>
-    // <small>(${escaparHtml(profissional.distancia)})</small><br>
     // <span class="tag">${escaparHtml(profissional.servicos)}</span><br>
     // <b>R$ ${escaparHtml(profissional.preco)}/diária</b>
+    const zonas = (profissional.zonas || []).map(zona => `Zona ${zona.charAt(0) + zona.slice(1).toLowerCase()}`).join(', ');
 
     return `
         <div class="pro ${classeSelecionado}">
             <div class="av">${escaparHtml(iniciais(profissional.nome))}</div>
             <div>
-                <b>${escaparHtml(profissional.nome)}</b>
+                <b>${escaparHtml(profissional.nome)}</b><br>
+                <small>${escaparHtml(zonas)}</small>
             </div>
             <a class="btn" href="perfil.html?id=${escaparHtml(profissional.id)}">Ver perfil</a>
         </div>
     `;
 }
 
-async function iniciarBusca() {
-    const profissionais = await buscarProfissionais();
+async function carregarBusca(zona) {
+    const profissionais = await buscarProfissionais(zona);
 
     document.querySelector('#lista').innerHTML = profissionais.length
         ? profissionais.map(criarItemDaBusca).join('')
-        : '<p>Nenhuma diarista cadastrada ainda.</p>';
+        : '<p>Nenhuma diarista encontrada.</p>';
     document.querySelector('#n').textContent = profissionais.length;
 
     selecionarUm('.pro');
+}
+
+async function iniciarBusca() {
+    const filtroZona = document.querySelector('#filtroZona');
+    document.querySelector('#btnBuscar').addEventListener('click', () => carregarBusca(filtroZona.value));
+
+    // Os tipos vêm do back (mesmo endpoint da tela Solicitar). O filtro por serviço é da frente de serviços/preço.
+    buscarTiposDeServico().then(tipos => preencherTiposDeServico(document.querySelector('#filtroServico'), tipos));
+
+    await carregarBusca('');
 }
 
 // ---------- Perfil (perfil.html) ----------

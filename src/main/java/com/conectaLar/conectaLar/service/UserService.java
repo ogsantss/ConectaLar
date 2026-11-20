@@ -5,6 +5,7 @@ import com.conectaLar.conectaLar.dto.UserCreateDTO;
 import com.conectaLar.conectaLar.dto.UserResponseDTO;
 import com.conectaLar.conectaLar.entity.User;
 import com.conectaLar.conectaLar.enums.Identification;
+import com.conectaLar.conectaLar.enums.Zona;
 import com.conectaLar.conectaLar.exception.UserNotFound;
 import com.conectaLar.conectaLar.repository.UserRepository;
 
@@ -24,6 +25,9 @@ public class UserService {
     }
 
     public UserResponseDTO register(UserCreateDTO userCreateDTO) {
+        if (userCreateDTO.getIdentify() == Identification.CLIENT && userCreateDTO.getZonas().size() != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cliente não pode ter mais de uma zona.");
+        }
         User savedUser = userRepository.save(toEntity(userCreateDTO));
         return toResponseDto(savedUser);
     }
@@ -34,8 +38,14 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFound("Usuário não encontrado."));
     }
 
-    public List<UserResponseDTO> listDiarists() {
-        return userRepository.findByIdentifyOrderByNomeAsc(Identification.DIARIST).stream()
+    public List<UserResponseDTO> listDiarists(Zona zona) {
+        List<User> diaristas;
+        if (zona == null) {
+            diaristas = userRepository.findByIdentifyOrderByNomeAsc(Identification.DIARIST);
+        } else {
+            diaristas = userRepository.findByIdentifyAndZonasContainingOrderByNomeAsc(Identification.DIARIST, zona);
+        }
+        return diaristas.stream()
                 .map(this::toPublicDto)
                 .toList();
     }
@@ -49,8 +59,10 @@ public class UserService {
 
     // O e-mail é salvo em minúsculas para o login não depender de como a pessoa digitou.
     private User toEntity(UserCreateDTO userCreateDTO) {
-        return new User(userCreateDTO.getNome(), userCreateDTO.getEmail().toLowerCase(), userCreateDTO.getCelular(),
+        User user = new User(userCreateDTO.getNome(), userCreateDTO.getEmail().toLowerCase(), userCreateDTO.getCelular(),
                 userCreateDTO.getSenha(), userCreateDTO.getIdentify());
+        user.setZonas(userCreateDTO.getZonas());
+        return user;
     }
 
     // Dados completos: só para o próprio usuário (resposta do cadastro e do login).

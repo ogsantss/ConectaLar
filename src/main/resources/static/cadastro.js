@@ -21,6 +21,16 @@ async function cadastrarUsuario() {
         erro.textContent = "Escolha se você é Cliente ou Diarista.";
         return;
     }
+    const zonas = [...document.querySelectorAll('input[name="zona"]:checked')].map(campo => campo.value);
+
+    if (zonas.length === 0) {
+        erro.textContent = "Escolha pelo menos uma zona.";
+        return;
+    }
+    if (tipoSelecionado.value === "CLIENT" && zonas.length > 1) {
+        erro.textContent = "Cliente deve escolher apenas uma zona.";
+        return;
+    }
     if (!termos.checked) {
         erro.textContent = "É preciso aceitar os termos de uso.";
         return;
@@ -31,7 +41,8 @@ async function cadastrarUsuario() {
         email: email.value,
         celular: celular.value,
         senha: senha.value,
-        identify: tipoSelecionado.value
+        identify: tipoSelecionado.value,
+        zonas: zonas
     }
 
     const response = await fetch("/usuarios", {

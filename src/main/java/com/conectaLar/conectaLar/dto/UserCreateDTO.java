@@ -1,9 +1,13 @@
 package com.conectaLar.conectaLar.dto;
 
 import com.conectaLar.conectaLar.enums.Identification;
+import com.conectaLar.conectaLar.enums.Zona;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+
+import java.util.Set;
 
 
 public class UserCreateDTO {
@@ -23,7 +27,18 @@ public class UserCreateDTO {
     @NotNull
     private Identification identify;
 
+    @NotEmpty
+    private Set<Zona> zonas;
+
     public UserCreateDTO() {
+    }
+
+    public Set<Zona> getZonas() {
+        return zonas;
+    }
+
+    public void setZonas(Set<Zona> zonas) {
+        this.zonas = zonas;
     }
 
     public Identification getIdentify() {
