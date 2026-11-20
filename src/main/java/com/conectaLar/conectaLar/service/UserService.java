@@ -55,7 +55,10 @@ public class UserService {
 
     // Dados completos: só para o próprio usuário (resposta do cadastro e do login).
     private UserResponseDTO toResponseDto(User user) {
-        return new UserResponseDTO(user.getId(), user.getNome(), user.getEmail(), user.getCelular(), user.getIdentify());
+        UserResponseDTO response = new UserResponseDTO(user.getId(), user.getNome(), user.getEmail(),
+                user.getCelular(), user.getIdentify());
+        preencherPerfil(response, user);
+        return response;
     }
 
     // Dados públicos: e-mail e celular não são expostos a qualquer visitante.
@@ -64,7 +67,16 @@ public class UserService {
         response.setId(user.getId());
         response.setNome(user.getNome());
         response.setIdentify(user.getIdentify());
+        preencherPerfil(response, user);
         return response;
+    }
+
+    // Campos de perfil comuns às duas respostas. notaMedia e totalAvaliacoes ficam para a frente de avaliações.
+    private void preencherPerfil(UserResponseDTO response, User user) {
+        response.setZonas(user.getZonas());
+        response.setServicos(user.getServicos());
+        response.setSobre(user.getSobre());
+        response.setAvatar(user.getAvatar());
     }
 
 }

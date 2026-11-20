@@ -1,6 +1,10 @@
 package com.conectaLar.conectaLar.dto;
 
 import com.conectaLar.conectaLar.enums.Identification;
+import com.conectaLar.conectaLar.enums.TipoServico;
+import com.conectaLar.conectaLar.enums.Zona;
+
+import java.util.Set;
 
 // O que o back devolve sobre um usuário. Nunca inclui a senha.
 // O id é obrigatório: o front salva no localStorage e usa como clienteId e remetenteId.
@@ -14,6 +18,19 @@ public class UserResponseDTO {
     private String celular;
 
     private Identification identify;
+
+    private Set<Zona> zonas;
+
+    private Set<TipoServico> servicos;
+
+    private String sobre;
+
+    private String avatar;
+
+    // Preenchidos pela frente de avaliações; por enquanto ficam nulos.
+    private Double notaMedia;
+
+    private Integer totalAvaliacoes;
 
     public UserResponseDTO(long id, String nome, String email, String celular, Identification identify) {
         this.id = id;
@@ -64,6 +81,54 @@ public class UserResponseDTO {
 
     public void setNome(String nome) {
         this.nome = nome;
+    }
+
+    public Set<Zona> getZonas() {
+        return zonas;
+    }
+
+    public void setZonas(Set<Zona> zonas) {
+        this.zonas = zonas;
+    }
+
+    public Set<TipoServico> getServicos() {
+        return servicos;
+    }
+
+    public void setServicos(Set<TipoServico> servicos) {
+        this.servicos = servicos;
+    }
+
+    public String getSobre() {
+        return sobre;
+    }
+
+    public void setSobre(String sobre) {
+        this.sobre = sobre;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    public Double getNotaMedia() {
+        return notaMedia;
+    }
+
+    public void setNotaMedia(Double notaMedia) {
+        this.notaMedia = notaMedia;
+    }
+
+    public Integer getTotalAvaliacoes() {
+        return totalAvaliacoes;
+    }
+
+    public void setTotalAvaliacoes(Integer totalAvaliacoes) {
+        this.totalAvaliacoes = totalAvaliacoes;
     }
 
 }
