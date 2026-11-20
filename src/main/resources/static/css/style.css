@@ -193,7 +193,7 @@ h2 {
     margin-bottom: 20px
 }
 
-.cep {
+.filtro-home {
     display: flex;
     gap: 10px;
     background: #fff;
@@ -203,8 +203,9 @@ h2 {
     margin-top: 24px
 }
 
-.cep input {
-    background: #fff
+.filtro-home select {
+    background: #fff;
+    flex: 1
 }
 
 .pro {
@@ -244,6 +245,52 @@ h2 {
     border-radius: 12px;
     background: radial-gradient(circle at 50% 50%, #0b6f8a33 0 90px, transparent 91px), repeating-linear-gradient(45deg, #e9efe9 0 40px, #f4f6f1 40px 80px);
     position: relative
+}
+
+/* Mapa das zonas (busca.html) */
+.mapa-zonas {
+    display: block;
+    width: 100%;
+    max-height: 480px;
+    padding: 12px
+}
+
+.zona {
+    cursor: pointer;
+    outline: none
+}
+
+.zona path {
+    fill: #cfe6ee;
+    stroke: #fff;
+    stroke-width: 4;
+    transition: fill .2s
+}
+
+.zona:hover path,
+.zona:focus-visible path {
+    fill: #a9d3e1
+}
+
+.zona.on path {
+    fill: var(--p)
+}
+
+.zona text {
+    text-anchor: middle;
+    font-weight: 700;
+    font-size: 18px;
+    fill: var(--pd);
+    pointer-events: none
+}
+
+.zona text.qtd {
+    font-weight: 400;
+    font-size: 13px
+}
+
+.zona.on text {
+    fill: #fff
 }
 
 .pin {

@@ -345,25 +345,18 @@ function destacarPaginaAtual(pagina) {
 
 // ---------- Home (index.html) ----------
 
-function configurarCampoCep() {
-    const campoCep = document.querySelector('#cep');
-    const botaoBuscar = document.querySelector('#go');
-    const mensagemErro = document.querySelector('#cepErr');
+function configurarBuscaPorZona() {
+    const campoZona = document.querySelector('#zonaHome');
+    const usuario = obterUsuarioLogado();
 
-    // Máscara: mantém só os números, limita a 8 dígitos e coloca o hífen.
-    campoCep.addEventListener('input', () => {
-        const digitos = campoCep.value.replace(/\D/g, '').slice(0, 8);
-        campoCep.value = digitos.replace(/(\d{5})(\d)/, '$1-$2');
-    });
+    // Cliente tem exatamente 1 zona (regra do cadastro), então ela já vem marcada.
+    if (usuario && usuario.zonas && usuario.zonas.length) {
+        campoZona.value = usuario.zonas[0];
+    }
 
-    botaoBuscar.addEventListener('click', () => {
-        const cepValido = /^\d{5}-\d{3}$/.test(campoCep.value);
-
-        if (cepValido) {
-            window.location.href = `busca.html?cep=${campoCep.value}`;
-        } else {
-            mensagemErro.textContent = 'Informe um CEP válido (ex: 04845-200)';
-        }
+    document.querySelector('#go').addEventListener('click', () => {
+        const filtro = campoZona.value ? `?zona=${encodeURIComponent(campoZona.value)}` : '';
+        window.location.href = `busca.html${filtro}`;
     });
 }
 
@@ -384,7 +377,7 @@ function criarCartaoProfissional(profissional) {
 async function iniciarHome() {
     destacarSecaoVisivel();
     animarAoAparecer(document.querySelectorAll('.rev'));
-    configurarCampoCep();
+    configurarBuscaPorZona();
 
     const profissionais = await buscarProfissionais();
     const container = document.querySelector('#pf');
@@ -429,16 +422,58 @@ async function carregarBusca(zona) {
     document.querySelector('#n').textContent = profissionais.length;
 
     selecionarUm('.pro');
+    return profissionais;
+}
+
+// Pinta a zona escolhida no mapa (zona vazia = nenhuma destacada).
+function destacarZonaNoMapa(zona) {
+    document.querySelectorAll('.zona').forEach(area => {
+        area.classList.toggle('on', area.dataset.zona === zona);
+    });
+}
+
+// Mostra em cada zona do mapa quantas diaristas atendem nela.
+function contarDiaristasPorZona(profissionais) {
+    document.querySelectorAll('.zona').forEach(area => {
+        const total = profissionais.filter(p => (p.zonas || []).includes(area.dataset.zona)).length;
+        area.querySelector('.qtd').textContent = `${total} diarista${total === 1 ? '' : 's'}`;
+    });
 }
 
 async function iniciarBusca() {
     const filtroZona = document.querySelector('#filtroZona');
-    document.querySelector('#btnBuscar').addEventListener('click', () => carregarBusca(filtroZona.value));
+
+    function filtrarPorZona(zona) {
+        filtroZona.value = zona;
+        destacarZonaNoMapa(zona);
+        carregarBusca(zona);
+    }
+
+    document.querySelector('#btnBuscar').addEventListener('click', () => filtrarPorZona(filtroZona.value));
+
+    // Clicar na zona já destacada desfaz o filtro e volta para todas.
+    document.querySelectorAll('.zona').forEach(area => {
+        const alternar = () => filtrarPorZona(filtroZona.value === area.dataset.zona ? '' : area.dataset.zona);
+        area.addEventListener('click', alternar);
+        area.addEventListener('keydown', evento => {
+            if (evento.key === 'Enter' || evento.key === ' ') {
+                evento.preventDefault();
+                alternar();
+            }
+        });
+    });
 
     // Os tipos vêm do back (mesmo endpoint da tela Solicitar). O filtro por serviço é da frente de serviços/preço.
     buscarTiposDeServico().then(tipos => preencherTiposDeServico(document.querySelector('#filtroServico'), tipos));
 
-    await carregarBusca('');
+    // A primeira carga traz todas as diaristas, então serve também para as contagens do mapa.
+    contarDiaristasPorZona(await carregarBusca(''));
+
+    // Vindo da Home com ?zona=NORTE, já aplica o filtro. Zona desconhecida na URL é ignorada.
+    const zonaDaUrl = new URLSearchParams(window.location.search).get('zona');
+    if (zonaDaUrl && filtroZona.querySelector(`option[value="${CSS.escape(zonaDaUrl)}"]`)) {
+        filtrarPorZona(zonaDaUrl);
+    }
 }
 
 // ---------- Perfil (perfil.html) ----------

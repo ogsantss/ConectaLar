@@ -28,10 +28,30 @@
                 <h2><span id="n">0</span> profissionais perto de você</h2>
                 <div id="lista"></div>
             </div>
-            <div class="map" aria-label="Mapa com a localização das profissionais">
-                <span class="pin" style="top:120px;left:40%"><b>1</b></span>
-                <span class="pin" style="top:90px;left:65%"><b>2</b></span>
-                <span class="pin" style="top:260px;left:55%"><b>3</b></span>
+            <!-- Mapa das zonas: clicar numa zona filtra a lista; clicar de novo volta para todas. -->
+            <div class="map">
+                <svg class="mapa-zonas" viewBox="0 0 400 480" role="group" aria-label="Mapa das zonas da cidade">
+                    <g class="zona" data-zona="NORTE" tabindex="0" role="button" aria-label="Filtrar Zona Norte">
+                        <path d="M30,60 Q120,10 200,20 Q300,15 370,70 L260,200 L200,240 L140,200 Z"/>
+                        <text x="200" y="95">Norte</text>
+                        <text class="qtd" x="200" y="118"></text>
+                    </g>
+                    <g class="zona" data-zona="LESTE" tabindex="0" role="button" aria-label="Filtrar Zona Leste">
+                        <path d="M370,70 Q395,160 385,250 Q380,340 350,410 L250,290 L200,240 L260,200 Z"/>
+                        <text x="318" y="240">Leste</text>
+                        <text class="qtd" x="318" y="263"></text>
+                    </g>
+                    <g class="zona" data-zona="SUL" tabindex="0" role="button" aria-label="Filtrar Zona Sul">
+                        <path d="M350,410 Q270,470 200,465 Q110,470 50,410 L150,290 L200,240 L250,290 Z"/>
+                        <text x="200" y="385">Sul</text>
+                        <text class="qtd" x="200" y="408"></text>
+                    </g>
+                    <g class="zona" data-zona="OESTE" tabindex="0" role="button" aria-label="Filtrar Zona Oeste">
+                        <path d="M50,410 Q15,320 20,240 Q15,140 30,60 L140,200 L200,240 L150,290 Z"/>
+                        <text x="82" y="240">Oeste</text>
+                        <text class="qtd" x="82" y="263"></text>
+                    </g>
+                </svg>
             </div>
         </div>
     </main>

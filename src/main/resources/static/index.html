@@ -15,9 +15,17 @@
             <h1>SUA CASA IMPECÁVEL COM <span>ZERO COMPLICAÇÃO.</span></h1>
             <p style="max-width:520px;margin-top:14px">Conectamos você às melhores diaristas da sua região em segundos.
                 Agendamento digital, pagamento seguro e garantia total de satisfação.</p>
-            <div class="cep"><input id="cep" placeholder="Digite seu CEP (Ex: 04845-200)" aria-label="CEP" inputmode="numeric" autocomplete="postal-code">
-                <button type="button" id="go" class="btn">Ver disponibilidade</button></div>
-            <div id="cepErr" class="err" role="alert" style="color:#ffe"></div>
+            <!-- Já abre na zona do cliente logado (configurarBuscaPorZona, em app.js). -->
+            <div class="filtro-home">
+                <select id="zonaHome" aria-label="Zona">
+                    <option value="">Todas as zonas</option>
+                    <option value="NORTE">Zona Norte</option>
+                    <option value="SUL">Zona Sul</option>
+                    <option value="LESTE">Zona Leste</option>
+                    <option value="OESTE">Zona Oeste</option>
+                </select>
+                <button type="button" id="go" class="btn">Ver disponibilidade</button>
+            </div>
             <p style="margin-top:auto;opacity:.8">⌄ role para ver mais</p>
         </section>
         <section id="vantagens" class="sec">
