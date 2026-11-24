@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -78,17 +79,42 @@ public class SolicitacaoService {
         return decidirSolicitacao(solicitacaoId, diaristaId, StatusSolicitacao.RECUSADA);
     }
 
-    private SolicitacaoResponseDTO decidirSolicitacao(Long solicitacaoId, Long diaristaId, StatusSolicitacao novoStatus) {
+    // Passo comum de aceitar, recusar e concluir: o pedido existe (404) e é dessa diarista (403).
+    // Cada ação pública só cuida da própria regra de status e data.
+    private Solicitacao buscarDaDiarista(Long solicitacaoId, Long diaristaId) {
         Solicitacao solicitacao = solicitacaoRepository.findById(solicitacaoId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Essa solicitação não existe."));
         if (solicitacao.getDiarista().getId() != diaristaId) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Essa solicitação não pertence a essa diarista.");
         }
+        return solicitacao;
+    }
+
+    private SolicitacaoResponseDTO decidirSolicitacao(Long solicitacaoId, Long diaristaId, StatusSolicitacao novoStatus) {
+        Solicitacao solicitacao = buscarDaDiarista(solicitacaoId, diaristaId);
         if (solicitacao.getStatus() != StatusSolicitacao.PENDENTE) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Essa solicitação não está pendente. Status Solicitação: "
                     + solicitacao.getStatus());
         }
+        if (novoStatus == StatusSolicitacao.ACEITA && solicitacao.getData().isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Não é possível aceitar um serviço cuja data já passou.");
+        }
         solicitacao.setStatus(novoStatus);
+        return new SolicitacaoResponseDTO(solicitacaoRepository.save(solicitacao));
+    }
+
+    public SolicitacaoResponseDTO concluir(Long solicitacaoId, Long diaristaId) {
+        Solicitacao solicitacao = buscarDaDiarista(solicitacaoId, diaristaId);
+        if (solicitacao.getStatus() != StatusSolicitacao.ACEITA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Só é possível concluir um serviço aceito. Status Solicitação: "
+                    + solicitacao.getStatus());
+        }
+        if (solicitacao.getData().isAfter(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Só é possível concluir o serviço a partir do dia marcado.");
+        }
+        solicitacao.setStatus(StatusSolicitacao.CONCLUIDA);
         return new SolicitacaoResponseDTO(solicitacaoRepository.save(solicitacao));
     }
 

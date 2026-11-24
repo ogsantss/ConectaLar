@@ -88,6 +88,10 @@ async function recusarPedido(idPedido, idDiarista) {
     return requisicaoApi(`/solicitacoes/${encodeURIComponent(idPedido)}/recusar`, 'PATCH', {diaristaId: idDiarista});
 }
 
+async function concluirPedido(idPedido, idDiarista) {
+    return requisicaoApi(`/solicitacoes/${encodeURIComponent(idPedido)}/concluir`, 'PATCH', {diaristaId: idDiarista});
+}
+
 async function criarSolicitacao(solicitacao) {
     return requisicaoApi('/solicitacoes', 'POST', solicitacao);
 }
@@ -510,8 +514,18 @@ async function iniciarPerfil() {
 
 // ---------- Agenda (agenda.html) ----------
 
-// Pedido pendente mostra os botões; nos outros status a diarista já decidiu, então mostra só a tag.
+// Pendente: a diarista decide (aceitar ou recusar). Aceito: falta marcar como concluído,
+// o que só vale a partir do dia do serviço (o back também confere e devolve 409).
+// Recusado e concluído: não há mais nada a fazer, então mostra só a tag.
 function criarAcoesDoPedido(pedido) {
+    // Pendente com data vencida não pode mais ser aceito (o back devolve 409), só recusado.
+    if (pedido.status === 'PENDENTE' && pedido.data < dataDeHoje()) {
+        return `
+            <span class="tag w">Data já passou</span><br>
+            <button class="btn out rec">Recusar</button>
+        `;
+    }
+
     if (pedido.status === 'PENDENTE') {
         return `
             <button class="btn out rec">Recusar</button>
@@ -520,7 +534,14 @@ function criarAcoesDoPedido(pedido) {
     }
 
     const exibicao = EXIBICAO_DO_STATUS[pedido.status];
-    return `<span class="tag ${exibicao.classe}">${exibicao.texto}</span>`;
+    const tag = `<span class="tag ${exibicao.classe}">${exibicao.texto}</span>`;
+
+    // As datas estão no formato AAAA-MM-DD, então comparar como texto já compara como data.
+    if (pedido.status === 'ACEITA' && pedido.data <= dataDeHoje()) {
+        return `${tag}<br><button class="btn conc">Concluir</button>`;
+    }
+
+    return tag;
 }
 
 function criarCartaoPedido(pedido) {
@@ -544,60 +565,210 @@ function criarCartaoPedido(pedido) {
     `;
 }
 
-// Um pedido só é novo enquanto ainda tem o botão "Aceitar".
-function atualizarContadorDePedidos() {
-    const pedidosNovos = document.querySelectorAll('#pedidos .ac');
-    document.querySelector('#novos').textContent = pedidosNovos.length;
+// Estado da tela: os pedidos que vieram do back, o filtro escolhido e o dia aberto no calendário.
+// A tela é sempre redesenhada a partir daqui, então lista, contador e calendário nunca discordam.
+const agenda = {
+    pedidos: [],
+    filtro: '',
+    diaSelecionado: ''
+};
+
+const DIAS_DA_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const DIAS_NO_CALENDARIO = 7;
+
+// Pendentes primeiro (pedem resposta), depois o que está marcado e, por último, o que já acabou.
+const ORDEM_DO_STATUS = {PENDENTE: 0, ACEITA: 1, CONCLUIDA: 2, RECUSADA: 3};
+
+// Só serviço confirmado ocupa a agenda. Pendente ainda pode ser recusado; recusado não acontece.
+const STATUS_NO_CALENDARIO = ['ACEITA', 'CONCLUIDA'];
+
+// Date -> "2026-11-28" no fuso do usuário. (toISOString usa UTC e à noite cairia no dia seguinte.)
+function paraDataIso(data) {
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    return `${data.getFullYear()}-${mes}-${dia}`;
 }
 
-async function tratarCliqueNoPedido(evento) {
-    const botao = evento.target;
-    const cartao = botao.closest('.req');
+// Texto da lista vazia de acordo com o filtro escolhido (a chave vazia é o filtro "Todos").
+const MENSAGEM_SEM_PEDIDOS = {
+    '': 'Você ainda não recebeu pedidos.',
+    PENDENTE: 'Nenhum pedido aguardando sua resposta.',
+    ACEITA: 'Nenhum serviço aceito no momento.',
+    CONCLUIDA: 'Nenhum serviço concluído ainda.',
+    RECUSADA: 'Nenhum pedido recusado.'
+};
 
-    if (!cartao) {
+// 0 -> "nenhum pedido novo", 1 -> "1 pedido novo", 3 -> "3 pedidos novos"
+function textoDePedidosNovos(quantidade) {
+    if (quantidade === 0) return 'nenhum pedido novo';
+    if (quantidade === 1) return '1 pedido novo';
+    return `${quantidade} pedidos novos`;
+}
+
+// Conta pelos dados, e não pelos botões na tela: com um filtro ativo, os pendentes podem estar escondidos.
+function atualizarContadorDePedidos() {
+    const pendentes = agenda.pedidos.filter(pedido => pedido.status === 'PENDENTE');
+    document.querySelector('#novos').textContent = textoDePedidosNovos(pendentes.length);
+}
+
+function desenharPedidos() {
+    const container = document.querySelector('#pedidos');
+
+    // filter() devolve uma lista nova, então o sort() não bagunça a ordem guardada em agenda.pedidos.
+    const visiveis = agenda.pedidos
+        .filter(pedido => !agenda.filtro || pedido.status === agenda.filtro)
+        .sort((a, b) => ORDEM_DO_STATUS[a.status] - ORDEM_DO_STATUS[b.status]);
+
+    container.innerHTML = visiveis.length
+        ? visiveis.map(criarCartaoPedido).join('')
+        : `<p>${MENSAGEM_SEM_PEDIDOS[agenda.filtro]}</p>`;
+}
+
+function compromissosDoDia(dataIso) {
+    return agenda.pedidos
+        .filter(pedido => pedido.data === dataIso && STATUS_NO_CALENDARIO.includes(pedido.status))
+        .sort((a, b) => a.hora.localeCompare(b.hora));
+}
+
+// Monta os próximos 7 dias a partir de hoje. O "•" marca os dias que têm serviço.
+function desenharDias() {
+    const hoje = new Date();
+    let html = '';
+
+    for (let i = 0; i < DIAS_NO_CALENDARIO; i++) {
+        // new Date(ano, mes, dia + i) já vira o mês sozinho (31/11 + 1 = 01/12).
+        const dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+        const dataIso = paraDataIso(dia);
+        const selecionado = dataIso === agenda.diaSelecionado ? ' on' : '';
+        const marca = compromissosDoDia(dataIso).length ? '•' : '&nbsp;';
+
+        html += `
+            <div class="day${selecionado}" data-data="${dataIso}">
+                <small>${DIAS_DA_SEMANA[dia.getDay()]}</small><br>
+                ${String(dia.getDate()).padStart(2, '0')}<br>
+                <span style="line-height:1">${marca}</span>
+            </div>
+        `;
+    }
+
+    document.querySelector('#dias').innerHTML = html;
+}
+
+function desenharCompromissos() {
+    const container = document.querySelector('#compromissos');
+    const compromissos = compromissosDoDia(agenda.diaSelecionado);
+
+    if (compromissos.length === 0) {
+        container.innerHTML = '<p>Nenhum serviço neste dia.</p>';
         return;
     }
 
-    const idDiarista = obterUsuarioLogado().id;
-    let pedidoAtualizado;
+    container.innerHTML = compromissos.map(pedido => {
+        const concluido = pedido.status === 'CONCLUIDA' ? ' <span class="tag ok">Concluído</span>' : '';
+        return `
+            <p>
+                <b>${escaparHtml(pedido.hora.slice(0, 5))}</b>
+                <span class="tag">${escaparHtml(pedido.titulo)}</span>${concluido}<br>
+                <small>${escaparHtml(pedido.cliente)} · ${escaparHtml(pedido.endereco)}</small>
+            </p>
+        `;
+    }).join('');
+}
+
+function desenharAgenda() {
+    desenharDias();
+    desenharCompromissos();
+}
+
+function redesenharTudo() {
+    desenharPedidos();
+    atualizarContadorDePedidos();
+    desenharAgenda();
+}
+
+async function tratarCliqueNoPedido(evento) {
+    const botao = evento.target.closest('button');
+    const cartao = evento.target.closest('.req');
+
+    if (!botao || !cartao) {
+        return;
+    }
+
+    // Guarda a função do back que cada botão chama; ela é executada lá embaixo.
+    let acao;
+    if (botao.classList.contains('rec')) {
+        acao = recusarPedido;
+    } else if (botao.classList.contains('ac')) {
+        acao = aceitarPedido;
+    } else if (botao.classList.contains('conc')) {
+        acao = concluirPedido;
+    } else {
+        return;
+    }
+
+    // Evita mandar a mesma ação duas vezes com cliques repetidos.
+    botao.disabled = true;
 
     try {
-        if (botao.classList.contains('rec')) {
-            pedidoAtualizado = await recusarPedido(cartao.dataset.id, idDiarista);
-        } else if (botao.classList.contains('ac')) {
-            pedidoAtualizado = await aceitarPedido(cartao.dataset.id, idDiarista);
-        } else {
-            return;
-        }
+        const pedidoAtualizado = await acao(cartao.dataset.id, obterUsuarioLogado().id);
 
-        // Redesenha o card com o que o back devolveu: os botões dão lugar à tag do novo status.
-        cartao.outerHTML = criarCartaoPedido(pedidoAtualizado);
-        atualizarContadorDePedidos();
+        // Troca o pedido antigo pelo que o back devolveu e redesenha tudo: lista, contador e calendário.
+        agenda.pedidos = agenda.pedidos.map(pedido =>
+            pedido.id === pedidoAtualizado.id ? pedidoAtualizado : pedido);
+        redesenharTudo();
     } catch (falha) {
         console.error(falha);
+        botao.disabled = false;
         alert('Não foi possível atualizar o pedido. Tente novamente.');
     }
 }
 
 async function iniciarAgenda() {
-    selecionarUm('.day');
-
     const container = document.querySelector('#pedidos');
-
-    // Um único listener no container atende aos botões de todos os pedidos,
-    // inclusive os que ainda serão criados (técnica chamada delegação de eventos).
-    container.addEventListener('click', tratarCliqueNoPedido);
-
     const usuario = obterUsuarioLogado();
+
     if (!usuario) {
         container.innerHTML = '<p>Entre na sua conta para ver seus pedidos.</p>';
         return;
     }
 
-    const pedidos = await buscarPedidos(usuario.id);
+    // "Maria Diarista" -> "Maria"
+    document.querySelector('#nomeDiarista').textContent = usuario.nome.trim().split(/\s+/)[0];
+    agenda.diaSelecionado = dataDeHoje();
 
-    container.innerHTML = pedidos.map(criarCartaoPedido).join('');
-    atualizarContadorDePedidos();
+    // Um único listener no container atende aos botões de todos os pedidos,
+    // inclusive os que ainda serão criados (técnica chamada delegação de eventos).
+    container.addEventListener('click', tratarCliqueNoPedido);
+
+    // Os dias também são recriados a cada desenho, então usam a mesma técnica.
+    document.querySelector('#dias').addEventListener('click', evento => {
+        const dia = evento.target.closest('.day');
+        if (dia) {
+            agenda.diaSelecionado = dia.dataset.data;
+            desenharAgenda();
+        }
+    });
+
+    selecionarUm('#filtroPedidos .chip');
+    document.querySelectorAll('#filtroPedidos .chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            agenda.filtro = chip.dataset.status;
+            desenharPedidos();
+        });
+    });
+
+    // O calendário aparece logo, mesmo antes de os pedidos chegarem do back.
+    desenharAgenda();
+
+    try {
+        agenda.pedidos = await buscarPedidos(usuario.id);
+    } catch (falha) {
+        console.error(falha);
+        container.innerHTML = '<p>Não foi possível carregar seus pedidos. Tente novamente.</p>';
+        return;
+    }
+
+    redesenharTudo();
 }
 
 // ---------- Minhas solicitações (solicitacoes.html) ----------
@@ -611,9 +782,21 @@ const EXIBICAO_DO_STATUS = {
 };
 
 // Liga o texto de cada filtro da tela ao status correspondente.
+// "Todas" fica de fora de propósito: sem status, exibirSolicitacoes mostra a lista inteira.
 const STATUS_DO_FILTRO = {
     Pendentes: 'PENDENTE',
-    'Concluídas': 'CONCLUIDA'
+    Aceitas: 'ACEITA',
+    'Concluídas': 'CONCLUIDA',
+    Recusadas: 'RECUSADA'
+};
+
+// Texto da lista vazia de acordo com o chip escolhido.
+const MENSAGEM_SEM_SOLICITACOES = {
+    Todas: 'Você ainda não fez nenhuma solicitação.',
+    Pendentes: 'Nenhuma solicitação aguardando confirmação.',
+    Aceitas: 'Nenhuma solicitação aceita no momento.',
+    'Concluídas': 'Nenhuma solicitação concluída ainda.',
+    Recusadas: 'Nenhuma solicitação recusada.'
 };
 
 function criarCartaoSolicitacao(solicitacao) {
@@ -639,7 +822,7 @@ function exibirSolicitacoes(solicitacoes, filtro) {
         : solicitacoes;
 
     if (filtradas.length === 0) {
-        container.innerHTML = '<p>Nada por aqui.</p>';
+        container.innerHTML = `<p>${MENSAGEM_SEM_SOLICITACOES[filtro] ?? 'Nada por aqui.'}</p>`;
         return;
     }
 
@@ -661,7 +844,8 @@ async function iniciarSolicitacoes() {
     exibirSolicitacoes(solicitacoes, 'Todas');
 
     document.querySelectorAll('.chip').forEach(chip => {
-        chip.addEventListener('click', () => exibirSolicitacoes(solicitacoes, chip.textContent));
+        // trim(): se alguém quebrar a linha do chip no HTML, os espaços não podem estragar a busca no mapa.
+        chip.addEventListener('click', () => exibirSolicitacoes(solicitacoes, chip.textContent.trim()));
     });
 }
 
@@ -672,10 +856,7 @@ async function iniciarSolicitacoes() {
 
 // Data de hoje no formato do <input type="date"> (AAAA-MM-DD), no fuso do usuário.
 function dataDeHoje() {
-    const hoje = new Date();
-    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-    const dia = String(hoje.getDate()).padStart(2, '0');
-    return `${hoje.getFullYear()}-${mes}-${dia}`;
+    return paraDataIso(new Date());
 }
 
 function preencherTiposDeServico(select, tipos) {

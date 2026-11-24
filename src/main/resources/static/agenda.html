@@ -12,26 +12,27 @@
     <main class="wrap">
         <span class="tag">ÁREA DO PRESTADOR</span>
         <h1 style="font-size:24px;color:var(--p);margin:10px 0 20px">
-            Olá, Prestadora! Você tem <span id="novos">0</span> novos pedidos
+            Olá, <span id="nomeDiarista">Prestadora</span>! Você tem <span id="novos">nenhum pedido novo</span>
         </h1>
 
-        <div class="grid2" style="grid-template-columns:1.3fr 1fr">
+        <div class="grid2 grid-agenda">
             <div>
-                <h3>Novos pedidos</h3><br>
+                <h3>Meus pedidos</h3>
+                <div class="chips" id="filtroPedidos" style="margin:10px 0 16px">
+                    <span class="chip on" data-status="">Todos</span>
+                    <span class="chip" data-status="PENDENTE">Pendentes</span>
+                    <span class="chip" data-status="ACEITA">Aceitos</span>
+                    <span class="chip" data-status="CONCLUIDA">Concluídos</span>
+                    <span class="chip" data-status="RECUSADA">Recusados</span>
+                </div>
                 <div id="pedidos"></div>
             </div>
 
-            <div class="card">
-                <h3>Minha agenda</h3><br>
-                <div class="days">
-                    <div class="day">29</div>
-                    <div class="day">30</div>
-                    <div class="day">01</div>
-                    <div class="day on">02</div>
-                    <div class="day">03</div>
-                </div>
-                <p style="margin-top:14px"><b>08:00</b> <span class="tag">Limpeza residencial completa</span></p>
-                <p><b>14:00</b> <span class="tag">Passar roupa</span></p>
+            <div class="card" style="align-self:start">
+                <h3>Minha agenda</h3>
+                <small>Serviços confirmados nos próximos 7 dias</small>
+                <div class="days" id="dias" style="margin-top:12px"></div>
+                <div id="compromissos" style="margin-top:14px"></div>
             </div>
         </div>
     </main>

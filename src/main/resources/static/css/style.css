@@ -175,6 +175,10 @@ h2 {
     gap: 20px
 }
 
+.grid-agenda {
+    grid-template-columns: 1.3fr 1fr
+}
+
 .hero {
     background: linear-gradient(120deg, #0b6f8a, #7cc3d6);
     color: #fff;
@@ -500,6 +504,7 @@ h2 {
 @media(max-width:800px) {
 
     .grid2,
+    .grid-agenda,
     .chat {
         grid-template-columns: 1fr
     }

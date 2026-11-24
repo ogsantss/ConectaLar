@@ -55,4 +55,9 @@ public class SolicitacaoController {
     public SolicitacaoResponseDTO recusar(@PathVariable Long solicitacaoId, @Valid @RequestBody SolicitacaoDecisaoRequestDTO dados) {
         return solicitacaoService.recusar(solicitacaoId, dados.diaristaId());
     }
+
+    @PatchMapping("/{solicitacaoId}/concluir")
+    public SolicitacaoResponseDTO concluir(@PathVariable Long solicitacaoId, @Valid @RequestBody SolicitacaoDecisaoRequestDTO dados) {
+        return solicitacaoService.concluir(solicitacaoId, dados.diaristaId());
+    }
 }
