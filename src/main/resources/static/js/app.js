@@ -33,7 +33,17 @@ async function requisicaoApi(caminho, metodo = 'GET', corpo) {
     const resposta = await fetch(caminho, opcoes);
 
     if (!resposta.ok) {
-        throw new Error(`Erro ${resposta.status} em ${metodo} ${caminho}`);
+        const erro = new Error(`Erro ${resposta.status} em ${metodo} ${caminho}`);
+
+        // Com server.error.include-message=always, o Spring manda o motivo do erro no campo "message".
+        // Ele fica guardado em erro.mensagem para a tela poder mostrar; quem não usa continua igual.
+        try {
+            erro.mensagem = (await resposta.json()).message;
+        } catch {
+            // Resposta de erro sem JSON: fica só a mensagem genérica de cada tela.
+        }
+
+        throw erro;
     }
 
     // Respostas sem corpo (ex: 204 No Content) não podem ser convertidas em JSON.
@@ -514,6 +524,45 @@ async function iniciarBusca() {
 
 // ---------- Perfil (perfil.html) ----------
 
+// Ordem fixa para exibir: o back guarda as zonas num Set, que não tem ordem.
+const ORDEM_DAS_ZONAS = ['NORTE', 'SUL', 'LESTE', 'OESTE'];
+
+// "NORTE" -> "Zona Norte" (mesma regra usada nos cartões da busca).
+function nomeDaZona(zona) {
+    return `Zona ${zona.charAt(0)}${zona.slice(1).toLowerCase()}`;
+}
+
+// Uma etiqueta para cada item ou, se a lista estiver vazia, um texto explicando.
+function criarEtiquetas(itens, textoSeVazio) {
+    if (itens.length === 0) {
+        return `<small>${escaparHtml(textoSeVazio)}</small>`;
+    }
+    return itens.map(item => `<span class="tag">${escaparHtml(item)}</span>`).join('');
+}
+
+function preencherPerfilPublico(diarista, tipos) {
+    document.querySelector('#nomeDiarista').textContent = diarista.nome;
+    // criarAvatar (do Editar perfil) mostra a imagem escolhida ou, sem avatar, as iniciais.
+    document.querySelector('#avDiarista').outerHTML =
+        criarAvatar(diarista, 'width:80px;height:80px;font-size:26px');
+
+    // textContent (e não innerHTML): o texto foi a própria diarista que digitou.
+    document.querySelector('#sobreDiarista').textContent = diarista.sobre || 'Ainda não escreveu sobre si.';
+
+    // O back manda só os códigos (PASSAR_ROUPA). O nome vem da mesma lista da tela Solicitar.
+    const servicos = tipos
+        .filter(tipo => (diarista.servicos || []).includes(tipo.codigo))
+        .map(tipo => tipo.descricao);
+    document.querySelector('#servicosDiarista').innerHTML =
+        criarEtiquetas(servicos, 'Ainda não informou os serviços que oferece.');
+
+    const zonas = ORDEM_DAS_ZONAS
+        .filter(zona => (diarista.zonas || []).includes(zona))
+        .map(nomeDaZona);
+    document.querySelector('#zonasDiarista').innerHTML =
+        criarEtiquetas(zonas, 'Ainda não informou onde atende.');
+}
+
 async function iniciarPerfil() {
     // Leva o id da profissional (perfil.html?id=3) para a tela de solicitação.
     const idDiarista = new URLSearchParams(window.location.search).get('id');
@@ -523,23 +572,21 @@ async function iniciarPerfil() {
         window.location.href = `solicitar.html?diarista=${encodeURIComponent(idDiarista ?? '')}`;
     });
 
-    const campoNome = document.querySelector('#nomeDiarista');
-    const avatar = document.querySelector('#avDiarista');
-
     try {
         if (!idDiarista) {
             throw new Error('Perfil aberto sem id da diarista');
         }
-        const diarista = await buscarDiarista(idDiarista);
-        campoNome.textContent = diarista.nome;
-        avatar.textContent = iniciais(diarista.nome);
+        // As duas buscas são independentes, então rodam ao mesmo tempo.
+        const [diarista, tipos] = await Promise.all([buscarDiarista(idDiarista), buscarTiposDeServico()]);
+        preencherPerfilPublico(diarista, tipos);
         // notas da diarista, comentados pois não estão implementados ainda
         // document.querySelector('#notaDiarista').textContent =
         //     `★ ${diarista.nota} (${diarista.avaliacoes} avaliações)`;
     } catch (falha) {
         console.error(falha);
-        campoNome.textContent = 'Diarista não encontrada';
-        avatar.textContent = '?';
+        document.querySelector('#nomeDiarista').textContent = 'Diarista não encontrada';
+        document.querySelector('#avDiarista').textContent = '?';
+        document.querySelector('#sobreDiarista').textContent = '';
         botaoAgendar.disabled = true;
     }
 }
@@ -904,27 +951,29 @@ function atualizarResumoDoPedido(select, tipos) {
     document.querySelector('#rv').textContent = tipoEscolhido ? formatarMoeda(tipoEscolhido.valor) : '';
 }
 
+// Devolve a diarista (com a lista de serviços dela) ou null se não veio id ou ela não existe.
 async function carregarDiarista(idDiarista) {
     const campoNome = document.querySelector('#rp');
 
     if (!idDiarista) {
         campoNome.textContent = 'Não selecionada';
-        return false;
+        return null;
     }
 
     try {
         const diarista = await buscarDiarista(idDiarista);
         campoNome.textContent = diarista.nome;
-        return true;
+        return diarista;
     } catch (falha) {
         console.error(falha);
         campoNome.textContent = 'Não encontrada';
-        return false;
+        return null;
     }
 }
 
 // Devolve a mensagem do primeiro problema encontrado, ou uma string vazia se estiver tudo certo.
 function validarSolicitacao(campos) {
+    if (!campos.tipo.value) return 'Escolha o tipo de serviço.';
     if (!campos.data.value) return 'Informe a data do serviço.';
     if (campos.data.value < dataDeHoje()) return 'A data não pode estar no passado.';
     if (!campos.hora.value) return 'Informe o horário do serviço.';
@@ -932,7 +981,7 @@ function validarSolicitacao(campos) {
     return '';
 }
 
-function iniciarSolicitar() {
+async function iniciarSolicitar() {
     // Esta tela é só da cliente. Quem não entrou vai para o login e a diarista vai para a agenda dela.
     const usuario = obterUsuarioLogado();
 
@@ -999,22 +1048,32 @@ function iniciarSolicitar() {
             window.location.href = 'solicitacoes.html';
         } catch (falha) {
             console.error(falha);
-            mensagemErro.textContent = 'Não foi possível enviar o pedido. Tente novamente.';
+            // Mostra o motivo que o back mandou (ex: "Essa diarista não oferece o serviço ...").
+            mensagemErro.textContent = falha.mensagem || 'Não foi possível enviar o pedido. Tente novamente.';
             botaoEnviar.disabled = false;
         }
     });
 
     // As duas buscas são independentes, então rodam ao mesmo tempo.
-    return Promise.all([
-        buscarTiposDeServico().then(resultado => {
-            tipos = resultado;
-            preencherTiposDeServico(campos.tipo, tipos);
-            atualizarResumoDoPedido(campos.tipo, tipos);
-        }),
-        carregarDiarista(idDiarista).then(valida => {
-            diaristaValida = valida;
-        })
+    const [todosOsTipos, diarista] = await Promise.all([
+        buscarTiposDeServico(),
+        carregarDiarista(idDiarista)
     ]);
+
+    diaristaValida = diarista !== null;
+
+    // O select mostra só os serviços que essa diarista presta, na ordem do enum.
+    tipos = diarista
+        ? todosOsTipos.filter(tipo => (diarista.servicos || []).includes(tipo.codigo))
+        : [];
+
+    if (diarista && tipos.length === 0) {
+        mensagemErro.textContent = 'Esta profissional ainda não informou os serviços que oferece.';
+        botaoEnviar.disabled = true;
+    }
+
+    preencherTiposDeServico(campos.tipo, tipos);
+    atualizarResumoDoPedido(campos.tipo, tipos);
 }
 
 // ---------- Mensagens (mensagens.html) ----------

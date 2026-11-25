@@ -33,6 +33,11 @@ public class SolicitacaoService {
         User cliente = buscarUsuario(dados.getClienteId(), Identification.CLIENT, "Cliente não encontrada.");
         User diarista = buscarUsuario(dados.getDiaristaId(), Identification.DIARIST, "Diarista não encontrada.");
 
+        if (!diarista.getServicos().contains(dados.getTipoServico())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Essa diarista não oferece o serviço " + dados.getTipoServico().getDescricao() + ".");
+        }
+
         // Pedidos recusados ou concluídos não ocupam o horário, só os que ainda estão reservados.
         boolean horarioOcupado = solicitacaoRepository.existsByDiaristaIdAndDataAndHoraAndStatusIn(
                 diarista.getId(), dados.getData(), dados.getHora(), STATUS_QUE_OCUPAM_HORARIO);
