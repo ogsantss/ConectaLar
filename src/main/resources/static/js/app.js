@@ -360,7 +360,9 @@ function criarHeader(usuario) {
                 <a href="index.html#vantagens" data-s="vantagens">Vantagens</a>
                 <a href="index.html#profissionais" data-s="profissionais">Profissionais</a>
                 <a href="index.html#avaliacoes" data-s="avaliacoes">Avaliações</a>
-                ${usuario ? '<a href="mensagens.html" data-p="mensagens">Mensagens</a>' : ''}`;
+                ${usuario ? `
+                <a href="solicitacoes.html" data-p="solicitacoes">Minhas solicitações</a>
+                <a href="mensagens.html" data-p="mensagens">Mensagens</a>` : ''}`;
 
     // Logado: o menu começa com o nome e o tipo de conta, para a pessoa saber com quem entrou.
     const menuConta = usuario
