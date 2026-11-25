@@ -8,6 +8,9 @@ import com.conectaLar.conectaLar.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import com.conectaLar.conectaLar.enums.Avatar;
+import java.util.Arrays;
+import com.conectaLar.conectaLar.dto.UserUpdateDTO;
 
 import java.util.List;
 
@@ -44,4 +47,19 @@ public class UserController {
         return userService.findDiaristById(id);
     }
 
+    @GetMapping("/avatares")
+    public List<String> listarAvatares() {
+        return Arrays.stream(Avatar.values()).map(Avatar::getCodigo).toList();
+    }
+
+    // Dados públicos de qualquer usuário (cliente ou diarista), usados para carregar a tela Editar perfil.
+    @GetMapping("/{id}")
+    public UserResponseDTO buscarPorId(@PathVariable long id) {
+        return userService.buscarPorId(id);
+    }
+
+    @PutMapping("/{id}")
+    public UserResponseDTO atualizarPerfil(@PathVariable long id, @Valid @RequestBody UserUpdateDTO dados) {
+        return userService.atualizarPerfil(id, dados);
+    }
 }

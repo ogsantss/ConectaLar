@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Editar perfil - conectaLar</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body data-page="editarPerfil">
+<main class="wrap" style="max-width:640px">
+    <form id="formPerfil" class="card" novalidate>
+        <h2 style="text-align:center">Editar perfil</h2>
+
+        <div style="display:flex;gap:16px;align-items:center">
+            <div id="previaAvatar"></div>
+            <div>
+                <b id="nomeUsuario">Carregando...</b><br>
+                <small id="tipoUsuario"></small>
+            </div>
+        </div>
+
+        <fieldset class="role" id="avatares" style="grid-template-columns:repeat(3,1fr)">
+            <legend>Avatar</legend>
+        </fieldset>
+
+        <label for="sobre">Sobre</label>
+        <textarea id="sobre" name="sobre" rows="4" maxlength="500"
+                  placeholder="Conte um pouco sobre você"></textarea>
+        <small id="contadorSobre">0/500</small>
+
+        <div id="camposDiarista" hidden>
+            <fieldset class="role" id="zonasDiarista">
+                <legend>Zonas onde atendo</legend>
+                <label class="role-opt"><input type="checkbox" name="zona" value="NORTE"> <span>Norte</span></label>
+                <label class="role-opt"><input type="checkbox" name="zona" value="SUL"> <span>Sul</span></label>
+                <label class="role-opt"><input type="checkbox" name="zona" value="LESTE"> <span>Leste</span></label>
+                <label class="role-opt"><input type="checkbox" name="zona" value="OESTE"> <span>Oeste</span></label>
+            </fieldset>
+
+            <fieldset class="role" id="servicos">
+                <legend>Serviços que ofereço</legend>
+            </fieldset>
+        </div>
+
+        <div id="camposCliente" hidden>
+            <label for="zonaCliente">Zona onde moro</label>
+            <select id="zonaCliente" name="zonaCliente">
+                <option value="NORTE">Zona Norte</option>
+                <option value="SUL">Zona Sul</option>
+                <option value="LESTE">Zona Leste</option>
+                <option value="OESTE">Zona Oeste</option>
+            </select>
+        </div>
+
+        <p class="err" id="erroPerfil" role="alert"></p>
+        <p id="sucessoPerfil" role="status" style="color:green"></p>
+
+        <button type="submit" id="salvar" class="btn full">Salvar</button>
+    </form>
+</main>
+
+<script src="js/app.js"></script>
+</body>
+
+</html>
