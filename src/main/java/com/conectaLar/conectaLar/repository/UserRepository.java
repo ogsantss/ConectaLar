@@ -15,4 +15,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByIdentifyAndZonasContainingOrderByNomeAsc(Identification identify, Zona zonas);
 
     List<User> findByIdentifyOrderByNomeAsc(Identification identify);
+
+    // Usados no cadastro para avisar "já cadastrado" antes que o banco recuse com erro 500.
+    boolean existsByEmail(String email);
+
+    boolean existsByCelular(String celular);
 }

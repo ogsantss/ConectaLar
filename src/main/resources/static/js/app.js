@@ -13,12 +13,9 @@
 /* ==========================================================================
  * 1. COMUNICAÇÃO COM O BACK END
  *
- * Hoje os dados são simulados com js/data.json. Para integrar uma função:
- *   - crie o endpoint no Spring;
- *   - nessa função, apague a linha da simulação;
- *   - descomente a linha "return requisicaoApi(...)".
- * As páginas não precisam mudar se o JSON do back end tiver os mesmos campos
- * do data.json. Por isso, ele serve de referência para os DTOs.
+ * Todas as chamadas ao Spring passam por requisicaoApi. Cada função abaixo
+ * corresponde a um endpoint, e as páginas só usam essas funções: se uma URL
+ * mudar no back, basta ajustar aqui.
  * ======================================================================== */
 
 // Faz uma requisição real ao back end e devolve a resposta já convertida.
@@ -39,23 +36,6 @@ async function requisicaoApi(caminho, metodo = 'GET', corpo) {
     // Respostas sem corpo (ex: 204 No Content) não podem ser convertidas em JSON.
     const texto = await resposta.text();
     return texto ? JSON.parse(texto) : null;
-}
-
-// Simulação de leitura: devolve uma lista do data.json.
-async function lerDadosSimulados(chave) {
-    const resposta = await fetch('js/data.json');
-
-    if (!resposta.ok) {
-        throw new Error(`Erro ${resposta.status} ao ler data.json`);
-    }
-
-    const dados = await resposta.json();
-    return dados[chave];
-}
-
-// Simulação de escrita: só registra no console (F12) o que seria enviado.
-async function simularEnvio(descricao, dados) {
-    console.info(`[simulação] ${descricao}`, dados);
 }
 
 // Sem zona, lista todas as diaristas; com zona, o back filtra (?zona=NORTE).
@@ -96,17 +76,24 @@ async function criarSolicitacao(solicitacao) {
     return requisicaoApi('/solicitacoes', 'POST', solicitacao);
 }
 
-// Chat: já integrado com o ChatController (/conversas).
+// ---------- Chat (ChatController, /conversas) ----------
+
 async function buscarConversas(usuarioId) {
-    return requisicaoApi(`/conversas?usuarioId=${usuarioId}`);
+    return requisicaoApi(`/conversas?usuarioId=${encodeURIComponent(usuarioId)}`);
 }
 
-async function buscarMensagens(conversaId) {
-    return requisicaoApi(`/conversas/${conversaId}/mensagens`);
+// Cria a conversa entre o cliente e a diarista ou devolve a que já existe entre os dois.
+async function criarOuAbrirConversa(clienteId, diaristaId) {
+    return requisicaoApi('/conversas', 'POST', {clienteId, diaristaId});
+}
+
+// O back só devolve o histórico se usuarioId participar da conversa (senão, 403).
+async function buscarMensagens(conversaId, usuarioId) {
+    return requisicaoApi(`/conversas/${encodeURIComponent(conversaId)}/mensagens?usuarioId=${encodeURIComponent(usuarioId)}`);
 }
 
 async function enviarMensagem(conversaId, mensagem) {
-    return requisicaoApi(`/conversas/${conversaId}/mensagens`, 'POST', mensagem);
+    return requisicaoApi(`/conversas/${encodeURIComponent(conversaId)}/mensagens`, 'POST', mensagem);
 }
 
 
@@ -429,10 +416,22 @@ async function carregarBusca(zona) {
     return profissionais;
 }
 
-// Pinta a zona escolhida no mapa (zona vazia = nenhuma destacada).
+// Pinta a zona escolhida no mapa. Zona vazia = todas: acende o botão "Todas as zonas".
 function destacarZonaNoMapa(zona) {
     document.querySelectorAll('.zona').forEach(area => {
         area.classList.toggle('on', area.dataset.zona === zona);
+    });
+    document.querySelector('.zona-todas').classList.toggle('on', zona === '');
+}
+
+// Faz um elemento do mapa responder ao clique e ao teclado (Enter ou espaço), como um botão.
+function aoAcionar(elemento, acao) {
+    elemento.addEventListener('click', acao);
+    elemento.addEventListener('keydown', evento => {
+        if (evento.key === 'Enter' || evento.key === ' ') {
+            evento.preventDefault();
+            acao();
+        }
     });
 }
 
@@ -445,27 +444,23 @@ function contarDiaristasPorZona(profissionais) {
 }
 
 async function iniciarBusca() {
-    const filtroZona = document.querySelector('#filtroZona');
+    // A zona é escolhida só pelo mapa. '' = todas as zonas.
+    let zonaAtual = '';
 
     function filtrarPorZona(zona) {
-        filtroZona.value = zona;
+        zonaAtual = zona;
         destacarZonaNoMapa(zona);
         carregarBusca(zona);
     }
 
-    document.querySelector('#btnBuscar').addEventListener('click', () => filtrarPorZona(filtroZona.value));
-
-    // Clicar na zona já destacada desfaz o filtro e volta para todas.
+    // Clicar numa zona filtra; clicar de novo na zona já destacada volta para todas.
     document.querySelectorAll('.zona').forEach(area => {
-        const alternar = () => filtrarPorZona(filtroZona.value === area.dataset.zona ? '' : area.dataset.zona);
-        area.addEventListener('click', alternar);
-        area.addEventListener('keydown', evento => {
-            if (evento.key === 'Enter' || evento.key === ' ') {
-                evento.preventDefault();
-                alternar();
-            }
-        });
+        aoAcionar(area, () => filtrarPorZona(zonaAtual === area.dataset.zona ? '' : area.dataset.zona));
     });
+
+    // Botão "Todas as zonas", dentro do próprio mapa.
+    aoAcionar(document.querySelector('.zona-todas'), () => filtrarPorZona(''));
+    destacarZonaNoMapa('');
 
     // Os tipos vêm do back (mesmo endpoint da tela Solicitar). O filtro por serviço é da frente de serviços/preço.
     buscarTiposDeServico().then(tipos => preencherTiposDeServico(document.querySelector('#filtroServico'), tipos));
@@ -473,9 +468,10 @@ async function iniciarBusca() {
     // A primeira carga traz todas as diaristas, então serve também para as contagens do mapa.
     contarDiaristasPorZona(await carregarBusca(''));
 
-    // Vindo da Home com ?zona=NORTE, já aplica o filtro. Zona desconhecida na URL é ignorada.
+    // Vindo da Home com ?zona=NORTE, já aplica o filtro. Zona que não existe no mapa é ignorada.
     const zonaDaUrl = new URLSearchParams(window.location.search).get('zona');
-    if (zonaDaUrl && filtroZona.querySelector(`option[value="${CSS.escape(zonaDaUrl)}"]`)) {
+    const zonasDoMapa = [...document.querySelectorAll('.zona')].map(area => area.dataset.zona);
+    if (zonaDaUrl && zonasDoMapa.includes(zonaDaUrl)) {
         filtrarPorZona(zonaDaUrl);
     }
 }
@@ -490,6 +486,8 @@ async function iniciarPerfil() {
     botaoAgendar.addEventListener('click', () => {
         window.location.href = `solicitar.html?diarista=${encodeURIComponent(idDiarista ?? '')}`;
     });
+
+    configurarBotaoMensagem(idDiarista);
 
     const campoNome = document.querySelector('#nomeDiarista');
     const avatar = document.querySelector('#avDiarista');
@@ -509,7 +507,43 @@ async function iniciarPerfil() {
         campoNome.textContent = 'Diarista não encontrada';
         avatar.textContent = '?';
         botaoAgendar.disabled = true;
+
+        const botaoMensagem = document.querySelector('#enviarMensagem');
+        if (botaoMensagem) {
+            botaoMensagem.disabled = true;
+        }
     }
+}
+
+// Botão "Enviar mensagem" do perfil:
+// - cliente logado: cria (ou reaproveita) a conversa com a diarista e abre mensagens.html?conversa=ID;
+// - sem login: vai para o login;
+// - diarista vendo o perfil: o botão some, porque diarista não conversa com outra diarista.
+function configurarBotaoMensagem(idDiarista) {
+    const botao = document.querySelector('#enviarMensagem');
+    const usuario = obterUsuarioLogado();
+
+    if (usuario && usuario.identify === 'DIARIST') {
+        botao.remove();
+        return;
+    }
+
+    botao.addEventListener('click', async () => {
+        if (!usuario) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        botao.disabled = true;
+        try {
+            const conversa = await criarOuAbrirConversa(usuario.id, Number(idDiarista));
+            window.location.href = `mensagens.html?conversa=${encodeURIComponent(conversa.id)}`;
+        } catch (falha) {
+            console.error(falha);
+            alert('Não foi possível abrir a conversa. Tente novamente.');
+            botao.disabled = false;
+        }
+    });
 }
 
 // ---------- Agenda (agenda.html) ----------
@@ -1019,7 +1053,7 @@ async function carregarMensagens() {
     }
 
     try {
-        const mensagens = await buscarMensagens(chat.conversaAtual);
+        const mensagens = await buscarMensagens(chat.conversaAtual, chat.usuario.id);
 
         if (mensagens.length !== chat.totalMensagens) {
             chat.totalMensagens = mensagens.length;
@@ -1039,7 +1073,8 @@ async function abrirConversa(conversaId, elemento) {
     await carregarMensagens();
 }
 
-async function desenharContatos() {
+// conversaParaAbrir vem da URL (mensagens.html?conversa=5); sem ela, abre a primeira da lista.
+async function desenharContatos(conversaParaAbrir) {
     const contatos = document.querySelector('#contatos');
     const conversas = await buscarConversas(chat.usuario.id);
 
@@ -1057,9 +1092,12 @@ async function desenharContatos() {
         div.addEventListener('click', () => abrirConversa(Number(div.dataset.id), div));
     });
 
-    // Já abre a primeira conversa da lista.
-    const primeiro = contatos.querySelector('div');
-    await abrirConversa(Number(primeiro.dataset.id), primeiro);
+    // Abre a conversa pedida na URL; se ela não estiver na lista (ou não veio), abre a primeira.
+    const pedida = conversaParaAbrir
+        ? contatos.querySelector(`div[data-id="${CSS.escape(conversaParaAbrir)}"]`)
+        : null;
+    const alvo = pedida || contatos.querySelector('div');
+    await abrirConversa(Number(alvo.dataset.id), alvo);
 }
 
 async function enviarTextoDoCampo() {
@@ -1106,7 +1144,9 @@ async function iniciarMensagens() {
         }
     });
 
-    await desenharContatos();
+    // Vindo do botão "Enviar mensagem" do perfil, a URL traz qual conversa abrir.
+    const conversaDaUrl = new URLSearchParams(window.location.search).get('conversa');
+    await desenharContatos(conversaDaUrl);
 
     // Busca mensagens novas a cada 3 segundos (as que a outra pessoa mandar).
     setInterval(carregarMensagens, 3000);

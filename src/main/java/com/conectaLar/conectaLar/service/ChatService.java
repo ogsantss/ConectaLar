@@ -85,8 +85,10 @@ public class ChatService {
         return resposta;
     }
 
-    public List<MensagemResponseDTO> listarMensagens(Long conversaId) {
-        buscarConversa(conversaId);
+    // Só o cliente ou a diarista da conversa podem ler o histórico.
+    public List<MensagemResponseDTO> listarMensagens(Long conversaId, Long usuarioId) {
+        Conversa conversa = buscarConversa(conversaId);
+        garantirParticipante(conversa, usuarioId);
 
         List<Mensagem> mensagens =
                 mensagemRepository.findByConversaIdOrderByEnviadaEmAsc(conversaId);
@@ -102,13 +104,7 @@ public class ChatService {
     public MensagemResponseDTO enviarMensagem(Long conversaId, MensagemRequestDTO dto) {
         Conversa conversa = buscarConversa(conversaId);
         User remetente = buscarUsuario(dto.remetenteId());
-
-        boolean ehOCliente = conversa.getCliente().getId() == remetente.getId();
-        boolean ehADiarista = conversa.getDiarista().getId() == remetente.getId();
-
-        if (!ehOCliente && !ehADiarista) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não participa desta conversa");
-        }
+        garantirParticipante(conversa, remetente.getId());
 
         Mensagem mensagem = new Mensagem();
         mensagem.setConversa(conversa);
@@ -118,5 +114,16 @@ public class ChatService {
         Mensagem salva = mensagemRepository.save(mensagem);
 
         return MensagemResponseDTO.from(salva);
+    }
+
+    // Regra de segurança do chat, usada para ler e para enviar:
+    // quem não é o cliente nem a diarista da conversa recebe 403.
+    private void garantirParticipante(Conversa conversa, long usuarioId) {
+        boolean ehOCliente = conversa.getCliente().getId() == usuarioId;
+        boolean ehADiarista = conversa.getDiarista().getId() == usuarioId;
+
+        if (!ehOCliente && !ehADiarista) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não participa desta conversa");
+        }
     }
 }
