@@ -517,22 +517,6 @@ h2 {
     }
 }
 
-.pin {
-    position: absolute;
-    background: var(--p);
-    color: #fff;
-    width: 30px;
-    height: 30px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    display: grid;
-    place-items: center
-}
-
-.pin b {
-    transform: rotate(45deg)
-}
-
 .days {
     display: flex;
     gap: 8px

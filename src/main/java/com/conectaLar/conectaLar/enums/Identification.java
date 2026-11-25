@@ -1,24 +1,9 @@
 package com.conectaLar.conectaLar.enums;
 
+// Tipo de conta. A página inicial de cada tipo fica no front (PAGINA_INICIAL_DO_PERFIL, em app.js).
 public enum Identification {
-    CLIENT("Cliente", "busca.html"),
-    DIARIST("Diarista", "agenda.html");
-
-    private final String rotulo;
-    private final String paginaInicial;
-
-    Identification(String rotulo, String paginaInicial) {
-        this.rotulo = rotulo;
-        this.paginaInicial = paginaInicial;
-    }
-
-    public String getRotulo() {
-        return rotulo;
-    }
-
-    public String getPaginaInicial() {
-        return paginaInicial;
-    }
+    CLIENT,
+    DIARIST;
 
     public boolean isDiarista(){
         return this == DIARIST;
