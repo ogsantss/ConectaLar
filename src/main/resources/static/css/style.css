@@ -757,7 +757,32 @@ section[id] {
 button.user {
     border: 0;
     cursor: pointer;
-    font-size: 16px
+    font-size: 16px;
+    font-weight: 700;
+    padding: 0;
+    overflow: hidden
+}
+
+/* Avatar do usuário logado preenchendo a bolinha da conta */
+button.user img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: block
+}
+
+/* Topo do menu da conta: nome e tipo de quem está logado */
+.drop-usuario {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 18px;
+    color: #fff;
+    background: var(--p)
+}
+
+.drop-usuario small {
+    opacity: .85
 }
 
 .drop {
@@ -792,7 +817,8 @@ button.user {
     background: var(--p)
 }
 
-.drop a:last-child:hover {
+/* Com alguém logado, o primeiro item é o .drop-usuario, então "Editar perfil" e "Sair" ganham o hover. */
+.drop a:not(:first-child):hover {
     background: var(--bg)
 }
 

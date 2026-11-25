@@ -332,6 +332,20 @@ function sair() {
     window.location.href = 'login.html';
 }
 
+// O que aparece dentro da bolinha da conta: o avatar escolhido no perfil, as iniciais do nome
+// ou o 👤 para quem não entrou. Não usa o criarAvatar porque ele devolve uma <div>, e dentro
+// de um <button> o HTML só aceita conteúdo de texto (como <img> e texto puro).
+function criarConteudoDoBotaoConta(usuario) {
+    if (!usuario) {
+        return '👤';
+    }
+    if (usuario.avatar) {
+        // alt vazio: quem usa leitor de tela já ouve o nome pelo aria-label do botão.
+        return `<img src="img/avatares/${escaparHtml(usuario.avatar)}.svg" alt="">`;
+    }
+    return escaparHtml(iniciais(usuario.nome));
+}
+
 // Diarista vê Agenda e Mensagens; cliente (ou visitante) vê o menu da Home.
 function criarHeader(usuario) {
     const ehDiarista = usuario && usuario.identify === 'DIARIST';
@@ -348,9 +362,16 @@ function criarHeader(usuario) {
                 <a href="index.html#avaliacoes" data-s="avaliacoes">Avaliações</a>
                 ${usuario ? '<a href="mensagens.html" data-p="mensagens">Mensagens</a>' : ''}`;
 
+    // Logado: o menu começa com o nome e o tipo de conta, para a pessoa saber com quem entrou.
     const menuConta = usuario
-        ? '<a href="editar-perfil.html">Editar perfil</a><a href="#" id="sair">Sair</a>'
+        ? `<div class="drop-usuario">
+               <b>${escaparHtml(usuario.nome)}</b>
+               <small>${ehDiarista ? 'Diarista' : 'Cliente'}</small>
+           </div>
+           <a href="editar-perfil.html">Editar perfil</a><a href="#" id="sair">Sair</a>`
         : '<a href="login.html">Conectar</a><a href="cadastro.html">Criar conta</a>';
+
+    const rotuloDaConta = usuario ? `Conta de ${escaparHtml(usuario.nome)}` : 'Conta';
 
     document.body.insertAdjacentHTML('afterbegin', `
         <header>
@@ -358,7 +379,7 @@ function criarHeader(usuario) {
             <nav>${ehDiarista ? menuDiarista : menuCliente}
             </nav>
             <div class="menu">
-                <button class="user" id="um" aria-label="Conta">👤</button>
+                <button class="user" id="um" aria-label="${rotuloDaConta}">${criarConteudoDoBotaoConta(usuario)}</button>
                 <div class="drop" id="dd">
                     ${menuConta}
                 </div>
@@ -475,10 +496,21 @@ function criarCartaoDepoimento(avaliacao) {
     `;
 }
 
+// Fim da Home: o visitante vê "Criar conta" e "Conectar". Quem já entrou não precisa disso,
+// então os botões viram atalhos para usar o app. (A Home só abre para cliente ou visitante.)
+function configurarChamadaFinal() {
+    if (!obterUsuarioLogado()) {
+        return;
+    }
+    document.querySelector('#acoesCta').innerHTML =
+        '<a class="btn" href="busca.html">Buscar diaristas</a><a class="btn" href="solicitacoes.html">Minhas solicitações</a>';
+}
+
 async function iniciarHome() {
     destacarSecaoVisivel();
     animarAoAparecer(document.querySelectorAll('.rev'));
     configurarBuscaPorZona();
+    configurarChamadaFinal();
 
     const [profissionais, avaliacoes] = await Promise.all([buscarProfissionais(), buscarAvaliacoesRecentes()]);
     const container = document.querySelector('#pf');

@@ -65,8 +65,11 @@
             <!-- Preenchido pelo app.js com GET /avaliacoes/recentes (iniciarHome). -->
             <div class="cols" id="depoimentos"></div>
             <div class="cta rev" style="margin-top:40px">
-                <h2 style="color:#fff">Pronto para ter a casa em ordem?</h2><a class="btn" href="cadastro.html">Criar
-                    conta</a><a class="btn" href="login.html">Conectar</a>
+                <h2 style="color:#fff">Pronto para ter a casa em ordem?</h2>
+                <!-- Para visitante. Com alguém logado, o app.js troca por atalhos (configurarChamadaFinal). -->
+                <div id="acoesCta">
+                    <a class="btn" href="cadastro.html">Criar conta</a><a class="btn" href="login.html">Conectar</a>
+                </div>
             </div>
         </section>
     </main>
