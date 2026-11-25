@@ -9,13 +9,13 @@
 </head>
 
 <body data-page="perfil">
+    <!-- Tudo vem do banco (perfil.html?id=3): iniciarPerfil, em app.js. -->
     <main class="wrap grid2">
         <div class="card">
             <div style="display:flex;gap:16px;align-items:center">
-                <div class="av" id="avDiarista" style="width:80px;height:80px;font-size:26px"></div>
+                <div id="avDiarista"></div>
                 <div>
                     <h2 style="margin:0" id="nomeDiarista">Carregando...</h2>
-                    <span class="tag ok">✔ Profissional verificada</span><br>
                     <span id="notaDiarista"></span>
                 </div>
                 <!-- Abre (ou reaproveita) a conversa com esta diarista: configurarBotaoMensagem, em app.js -->
@@ -23,26 +23,23 @@
             </div>
 
             <h3 style="margin-top:20px">Sobre</h3>
-            <p>8 anos de experiência em limpeza residencial, atendo apartamentos e casas na Zona Sul, com
-                pontualidade e cuidado.</p>
+            <p id="sobreDiarista"></p>
+
+            <h3 style="margin-top:16px">Zonas onde atende</h3>
+            <div class="chips" id="zonasDiarista"></div>
 
             <h3 style="margin-top:16px">Serviços oferecidos</h3>
-            <div class="chips">
-                <span class="tag">Limpeza completa</span>
-                <span class="tag">Passar roupa</span>
-                <span class="tag">Organização</span>
-            </div>
+            <div class="chips" id="servicosDiarista"></div>
 
             <h3 id="av-perfil" style="margin-top:16px">Avaliações</h3>
-            <p><b>Carla M.</b> ★★★★★ Chegou no horário e deixou tudo impecável.</p>
-            <p><b>Roberto S.</b> ★★★★★ Muito atenciosa e rápida.</p>
+            <div id="avaliacoesDiarista"></div>
         </div>
 
         <!-- Data, horário e valor são escolhidos na tela Solicitar Serviço. -->
         <div class="card" style="align-self:start">
             <button type="button" id="agendar" class="btn full"
                 style="padding:20px;font-size:20px">Agendar diária</button>
-            <p style="text-align:center;margin-top:10px"><small>🔒 Pagamento seguro</small></p>
+            <p style="text-align:center;margin-top:10px"><small>Na próxima tela você escolhe o serviço, a data e o horário.</small></p>
         </div>
     </main>
 

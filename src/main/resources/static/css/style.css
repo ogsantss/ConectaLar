@@ -232,6 +232,11 @@ h2 {
     flex: 1
 }
 
+/* O avatar também é uma div filha do .pro, mas não pode esticar como o bloco do nome. */
+.pro>.av {
+    flex: none
+}
+
 .av {
     width: 44px;
     height: 44px;

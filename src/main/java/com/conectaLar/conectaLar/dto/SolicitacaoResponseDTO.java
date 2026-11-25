@@ -20,6 +20,10 @@ public class SolicitacaoResponseDTO {
     private StatusSolicitacao status;
     private String cliente;
     private String diarista;
+    // Preenchidos pelo SolicitacaoService nas listas: se quem pediu a lista já avaliou esse serviço
+    // (mostra ou esconde o botão Avaliar) e a nota média do cliente (aparece na Agenda da diarista).
+    private boolean jaAvaliada;
+    private Double notaCliente;
 
     public SolicitacaoResponseDTO(Solicitacao solicitacao) {
         this.id = solicitacao.getId();
@@ -77,5 +81,21 @@ public class SolicitacaoResponseDTO {
 
     public String getDiarista() {
         return diarista;
+    }
+
+    public boolean isJaAvaliada() {
+        return jaAvaliada;
+    }
+
+    public void setJaAvaliada(boolean jaAvaliada) {
+        this.jaAvaliada = jaAvaliada;
+    }
+
+    public Double getNotaCliente() {
+        return notaCliente;
+    }
+
+    public void setNotaCliente(Double notaCliente) {
+        this.notaCliente = notaCliente;
     }
 }

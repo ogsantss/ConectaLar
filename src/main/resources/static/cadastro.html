@@ -53,6 +53,14 @@
             <label class="role-opt"><input type="checkbox" name="zona" value="OESTE"> <span>Oeste</span></label>
         </fieldset>
 
+        <!-- Só aparece para a diarista. Opções carregadas de GET /solicitacoes/tipos (cadastro.js).
+             O hidden fica na div porque o display:grid do .role venceria o hidden do próprio fieldset. -->
+        <div id="camposDiarista" hidden>
+            <fieldset class="role" id="servicos">
+                <legend>Serviços que ofereço</legend>
+            </fieldset>
+        </div>
+
         <label for="termos" style="font-weight:400">
             <input type="checkbox" id="termos" style="width:auto" required> Aceito os termos de uso
         </label>

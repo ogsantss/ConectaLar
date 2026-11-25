@@ -7,10 +7,12 @@ import com.conectaLar.conectaLar.entity.User;
 import com.conectaLar.conectaLar.enums.Identification;
 import com.conectaLar.conectaLar.enums.Zona;
 import com.conectaLar.conectaLar.exception.UserNotFound;
+import com.conectaLar.conectaLar.repository.AvaliacaoRepository;
 import com.conectaLar.conectaLar.repository.UserRepository;
 import com.conectaLar.conectaLar.dto.UserUpdateDTO;
 import com.conectaLar.conectaLar.enums.Avatar;
 import com.conectaLar.conectaLar.enums.TipoServico;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.springframework.http.HttpStatus;
@@ -23,15 +25,17 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AvaliacaoRepository avaliacaoRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, AvaliacaoRepository avaliacaoRepository) {
         this.userRepository = userRepository;
+        this.avaliacaoRepository = avaliacaoRepository;
     }
 
     public UserResponseDTO register(UserCreateDTO userCreateDTO) {
-        if (userCreateDTO.getIdentify() == Identification.CLIENT && userCreateDTO.getZonas().size() != 1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cliente não pode ter mais de uma zona.");
-        }
+        // Mesmas regras de zona e serviço da edição de perfil. Sem isso, uma diarista nova
+        // ficaria sem serviços e não poderia ser contratada até editar o perfil.
+        validarZonasEServicos(userCreateDTO.getIdentify(), userCreateDTO.getZonas(), servicosOuVazio(userCreateDTO.getServicos()));
         // Email e celular são únicos no banco. Conferir antes de salvar devolve 409 com uma
         // mensagem clara, em vez do 500 genérico que o banco geraria ao recusar a duplicata.
         // O email é comparado em minúsculas porque é assim que ele é salvo (toEntity).
@@ -51,7 +55,9 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFound("Usuário não encontrado."));
     }
 
-    public List<UserResponseDTO> listDiarists(Zona zona) {
+    // A zona é filtrada no banco. O serviço é filtrado aqui: são poucas diaristas e no máximo 3 serviços
+    // por diarista, então não vale criar uma consulta para cada combinação de filtros.
+    public List<UserResponseDTO> listDiarists(Zona zona, TipoServico servico) {
         List<User> diaristas;
         if (zona == null) {
             diaristas = userRepository.findByIdentifyOrderByNomeAsc(Identification.DIARIST);
@@ -59,6 +65,7 @@ public class UserService {
             diaristas = userRepository.findByIdentifyAndZonasContainingOrderByNomeAsc(Identification.DIARIST, zona);
         }
         return diaristas.stream()
+                .filter(diarista -> servico == null || diarista.getServicos().contains(servico))
                 .map(this::toPublicDto)
                 .toList();
     }
@@ -86,8 +93,7 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado."));
 
-        // O cliente não manda serviços; null vira "nenhum serviço" para as regras abaixo não quebrarem.
-        Set<TipoServico> servicos = dados.servicos() == null ? Set.of() : dados.servicos();
+        Set<TipoServico> servicos = servicosOuVazio(dados.servicos());
         validarZonasEServicos(user.getIdentify(), dados.zonas(), servicos);
 
         String avatar = textoOuNulo(dados.avatar());
@@ -111,6 +117,7 @@ public class UserService {
         User user = new User(userCreateDTO.getNome(), userCreateDTO.getEmail().toLowerCase(), userCreateDTO.getCelular(),
                 userCreateDTO.getSenha(), userCreateDTO.getIdentify());
         user.setZonas(userCreateDTO.getZonas());
+        user.setServicos(servicosOuVazio(userCreateDTO.getServicos()));
         return user;
     }
 
@@ -132,12 +139,14 @@ public class UserService {
         return response;
     }
 
-    // Campos de perfil comuns às duas respostas. notaMedia e totalAvaliacoes ficam para a frente de avaliações.
+    // Campos de perfil comuns às duas respostas, incluindo a nota média (null se ainda não tiver avaliações).
     private void preencherPerfil(UserResponseDTO response, User user) {
         response.setZonas(user.getZonas());
         response.setServicos(user.getServicos());
         response.setSobre(user.getSobre());
         response.setAvatar(user.getAvatar());
+        response.setNotaMedia(avaliacaoRepository.calcularMedia(user.getId()));
+        response.setTotalAvaliacoes((int) avaliacaoRepository.countByAvaliadoId(user.getId()));
     }
 
     // Cliente: exatamente 1 zona (onde mora) e nenhum serviço. Diarista: 1 ou mais zonas e pelo menos 1 serviço.
@@ -153,6 +162,12 @@ public class UserService {
         } else if (servicos.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Diarista deve oferecer pelo menos um serviço.");
         }
+    }
+
+    // O cliente não manda serviços; null vira "nenhum serviço" para as regras não quebrarem.
+    // new HashSet: o Hibernate precisa de uma coleção que ele possa alterar (o Set.of() não deixa).
+    private Set<TipoServico> servicosOuVazio(Set<TipoServico> servicos) {
+        return servicos == null ? new HashSet<>() : servicos;
     }
 
     // "  " ou null viram null, para o banco não guardar texto vazio. Qualquer outro texto é salvo sem espaços nas pontas.

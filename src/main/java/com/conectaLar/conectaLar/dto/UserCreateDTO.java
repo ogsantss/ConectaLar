@@ -1,6 +1,7 @@
 package com.conectaLar.conectaLar.dto;
 
 import com.conectaLar.conectaLar.enums.Identification;
+import com.conectaLar.conectaLar.enums.TipoServico;
 import com.conectaLar.conectaLar.enums.Zona;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -30,7 +31,18 @@ public class UserCreateDTO {
     @NotEmpty
     private Set<Zona> zonas;
 
+    // Só a diarista manda (pelo menos 1). A cliente manda vazio ou não manda; a regra fica no UserService.
+    private Set<TipoServico> servicos;
+
     public UserCreateDTO() {
+    }
+
+    public Set<TipoServico> getServicos() {
+        return servicos;
+    }
+
+    public void setServicos(Set<TipoServico> servicos) {
+        this.servicos = servicos;
     }
 
     public Set<Zona> getZonas() {

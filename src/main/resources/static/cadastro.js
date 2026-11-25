@@ -14,6 +14,19 @@ function redirecionarLogin() {
 
 cadastrar.addEventListener("click", cadastrarUsuario)
 
+// Serviços: só a diarista escolhe. As opções vêm do back (criarOpcoesDeServico fica no app.js).
+const camposDiarista = document.getElementById("camposDiarista");
+
+buscarTiposDeServico()
+    .then(tipos => document.getElementById("servicos").insertAdjacentHTML("beforeend", criarOpcoesDeServico(tipos)))
+    .catch(falha => console.error(falha));
+
+document.querySelectorAll('input[name="tipo"]').forEach(opcao => {
+    opcao.addEventListener("change", () => {
+        camposDiarista.hidden = opcao.value !== "DIARIST";
+    });
+});
+
 async function cadastrarUsuario() {
     const tipoSelecionado = document.querySelector('input[name="tipo"]:checked');
 
@@ -21,14 +34,22 @@ async function cadastrarUsuario() {
         erro.textContent = "Escolha se você é Cliente ou Diarista.";
         return;
     }
+    const ehDiarista = tipoSelecionado.value === "DIARIST";
     const zonas = [...document.querySelectorAll('input[name="zona"]:checked')].map(campo => campo.value);
+    const servicos = ehDiarista
+        ? [...document.querySelectorAll('input[name="servico"]:checked')].map(campo => campo.value)
+        : [];
 
     if (zonas.length === 0) {
         erro.textContent = "Escolha pelo menos uma zona.";
         return;
     }
-    if (tipoSelecionado.value === "CLIENT" && zonas.length > 1) {
+    if (!ehDiarista && zonas.length > 1) {
         erro.textContent = "Cliente deve escolher apenas uma zona.";
+        return;
+    }
+    if (ehDiarista && servicos.length === 0) {
+        erro.textContent = "Escolha pelo menos um serviço.";
         return;
     }
     if (!termos.checked) {
@@ -42,7 +63,8 @@ async function cadastrarUsuario() {
         celular: celular.value,
         senha: senha.value,
         identify: tipoSelecionado.value,
-        zonas: zonas
+        zonas: zonas,
+        servicos: servicos
     }
 
     const response = await fetch("/usuarios", {

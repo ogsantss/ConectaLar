@@ -27,7 +27,7 @@ public class UserResponseDTO {
 
     private String avatar;
 
-    // Preenchidos pela frente de avaliações; por enquanto ficam nulos.
+    // Média das notas recebidas (1 a 5). Fica null enquanto o usuário não tiver avaliações.
     private Double notaMedia;
 
     private Integer totalAvaliacoes;

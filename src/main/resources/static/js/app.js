@@ -30,7 +30,14 @@ async function requisicaoApi(caminho, metodo = 'GET', corpo) {
     const resposta = await fetch(caminho, opcoes);
 
     if (!resposta.ok) {
-        throw new Error(`Erro ${resposta.status} em ${metodo} ${caminho}`);
+        // O Spring manda o motivo no campo "message" (ex: "Essa diarista não oferece esse serviço.").
+        // A validação automática (@Valid) manda um texto técnico ("Validation failed..."), que a tela não mostra.
+        const corpo = await resposta.json().catch(() => null);
+        const erro = new Error(`Erro ${resposta.status} em ${metodo} ${caminho}`);
+        erro.mensagemDoServidor = corpo && corpo.message && !corpo.message.startsWith('Validation failed')
+            ? corpo.message
+            : '';
+        throw erro;
     }
 
     // Respostas sem corpo (ex: 204 No Content) não podem ser convertidas em JSON.
@@ -38,10 +45,14 @@ async function requisicaoApi(caminho, metodo = 'GET', corpo) {
     return texto ? JSON.parse(texto) : null;
 }
 
-// Sem zona, lista todas as diaristas; com zona, o back filtra (?zona=NORTE).
-async function buscarProfissionais(zona) {
-    const filtro = zona ? `?zona=${encodeURIComponent(zona)}` : '';
-    return requisicaoApi(`/usuarios/diaristas${filtro}`);
+// Sem filtros, lista todas as diaristas. Zona e serviço são opcionais (?zona=NORTE&servico=PASSAR_ROUPA).
+async function buscarProfissionais(zona, servico) {
+    const filtros = new URLSearchParams();
+    if (zona) filtros.set('zona', zona);
+    if (servico) filtros.set('servico', servico);
+
+    const textoDosFiltros = filtros.toString();
+    return requisicaoApi(`/usuarios/diaristas${textoDosFiltros ? `?${textoDosFiltros}` : ''}`);
 }
 
 async function buscarPedidos(idDiarista) {
@@ -87,6 +98,21 @@ async function concluirPedido(idPedido, idDiarista) {
 
 async function criarSolicitacao(solicitacao) {
     return requisicaoApi('/solicitacoes', 'POST', solicitacao);
+}
+
+// ---------- Avaliações (AvaliacaoController, /avaliacoes) ----------
+
+// Mesmo formato do AvaliacaoRequestDTO: {solicitacaoId, avaliadorId, nota, comentario}.
+async function enviarAvaliacao(avaliacao) {
+    return requisicaoApi('/avaliacoes', 'POST', avaliacao);
+}
+
+async function buscarAvaliacoesRecebidas(idUsuario) {
+    return requisicaoApi(`/avaliacoes/usuario/${encodeURIComponent(idUsuario)}`);
+}
+
+async function buscarAvaliacoesRecentes() {
+    return requisicaoApi('/avaliacoes/recentes');
 }
 
 // ---------- Chat (ChatController, /conversas) ----------
@@ -182,6 +208,43 @@ function formatarDataHora(data, hora) {
     return `${dia}/${mes}/${ano} • ${hora.slice(0, 5)}`;
 }
 
+// "2026-10-15T14:30:00" -> "15/10/2026"
+function formatarData(dataHora) {
+    const [ano, mes, dia] = dataHora.slice(0, 10).split('-');
+    return `${dia}/${mes}/${ano}`;
+}
+
+// "SUL" -> "Zona Sul"
+function nomeDaZona(zona) {
+    return `Zona ${zona.charAt(0) + zona.slice(1).toLowerCase()}`;
+}
+
+// "Carla Mendes Silva" -> "Carla M." (as avaliações públicas não mostram o nome completo de quem avaliou).
+function nomeCurto(nome) {
+    const partes = String(nome).trim().split(/\s+/);
+    return partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1][0].toUpperCase()}.` : partes[0];
+}
+
+// 4 -> "★★★★☆"
+function estrelas(nota) {
+    return '★'.repeat(nota) + '☆'.repeat(5 - nota);
+}
+
+// 4.666 -> "4,7"
+function formatarMedia(notaMedia) {
+    return notaMedia.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 1});
+}
+
+// Média vinda do back (notaMedia e totalAvaliacoes do UserResponseDTO) -> "★ 4,5 · 2 avaliações".
+// Sem avaliações, notaMedia vem null.
+function textoDaNota(notaMedia, totalAvaliacoes) {
+    if (notaMedia === null || notaMedia === undefined) {
+        return 'Sem avaliações ainda';
+    }
+    const total = totalAvaliacoes === 1 ? '1 avaliação' : `${totalAvaliacoes} avaliações`;
+    return `★ ${formatarMedia(notaMedia)} · ${total}`;
+}
+
 // Mostra os elementos com efeito de entrada quando aparecem na tela.
 function animarAoAparecer(elementos) {
     const observador = new IntersectionObserver(entradas => {
@@ -216,7 +279,8 @@ const PERFIS_POR_PAGINA = {
     solicitacoes: ['CLIENT'],
     agenda: ['DIARIST'],
     mensagens: ['CLIENT', 'DIARIST'],
-    editarPerfil: ['CLIENT', 'DIARIST']
+    editarPerfil: ['CLIENT', 'DIARIST'],
+    avaliar: ['CLIENT', 'DIARIST']
 };
 
 const PAGINAS_PUBLICAS = ['index', 'login', 'cadastro'];
@@ -383,16 +447,30 @@ function configurarBuscaPorZona() {
     });
 }
 
+// ['SUL', 'OESTE'] -> "Zona Sul, Zona Oeste"
+function textoDasZonas(zonas) {
+    return (zonas || []).map(nomeDaZona).join(', ');
+}
+
 function criarCartaoProfissional(profissional) {
-    // notas e avaliações, serviços e preços comentados pois não estão sendo devolvidas pelo back ainda
-    // <small>★ ${escaparHtml(profissional.nota)} · ${escaparHtml(profissional.avaliacoes)} avaliações</small><br>
-    // <span class="tag">${escaparHtml(profissional.servicos)}</span>
-    // <p style="margin:10px 0"><b>R$ ${escaparHtml(profissional.preco)}/diária</b></p>
     return `
         <div class="card rev">
-            <div class="av" style="margin-bottom:10px">${escaparHtml(iniciais(profissional.nome))}</div>
+            ${criarAvatar(profissional, 'margin-bottom:10px')}
             <b>${escaparHtml(profissional.nome)}</b><br>
-            <a class="btn full" href="perfil.html?id=${escaparHtml(profissional.id)}">Ver perfil</a>
+            <small>${escaparHtml(textoDaNota(profissional.notaMedia, profissional.totalAvaliacoes))}</small><br>
+            <small>${escaparHtml(textoDasZonas(profissional.zonas))}</small>
+            <a class="btn full" style="margin-top:10px" href="perfil.html?id=${escaparHtml(profissional.id)}">Ver perfil</a>
+        </div>
+    `;
+}
+
+// Depoimento da seção "O que dizem nossos clientes": as últimas notas dadas para diaristas.
+function criarCartaoDepoimento(avaliacao) {
+    const comentario = avaliacao.comentario ? `<p>“${escaparHtml(avaliacao.comentario)}”</p>` : '<p></p>';
+    return `
+        <div class="card rev">${estrelas(avaliacao.nota)}${comentario}
+            <b>${escaparHtml(nomeCurto(avaliacao.avaliadorNome))}</b>
+            <small>sobre ${escaparHtml(avaliacao.avaliadoNome)}</small>
         </div>
     `;
 }
@@ -402,15 +480,21 @@ async function iniciarHome() {
     animarAoAparecer(document.querySelectorAll('.rev'));
     configurarBuscaPorZona();
 
-    const profissionais = await buscarProfissionais();
+    const [profissionais, avaliacoes] = await Promise.all([buscarProfissionais(), buscarAvaliacoesRecentes()]);
     const container = document.querySelector('#pf');
+    const depoimentos = document.querySelector('#depoimentos');
 
     container.innerHTML = profissionais.length
         ? profissionais.map(criarCartaoProfissional).join('')
         : '<p class="rev">Nenhuma diarista cadastrada ainda.</p>';
 
+    depoimentos.innerHTML = avaliacoes.length
+        ? avaliacoes.map(criarCartaoDepoimento).join('')
+        : '<p class="rev">Ainda não há avaliações. Contrate uma diarista e seja a primeira pessoa a avaliar!</p>';
+
     // Os cartões novos não existiam quando a animação foi configurada acima.
     animarAoAparecer(container.querySelectorAll('.rev'));
+    animarAoAparecer(depoimentos.querySelectorAll('.rev'));
 }
 
 // ---------- Busca (busca.html) ----------
@@ -418,26 +502,22 @@ async function iniciarHome() {
 function criarItemDaBusca(profissional, indice) {
     // O primeiro profissional da lista já começa selecionado.
     const classeSelecionado = indice === 0 ? 'on' : '';
-    // Nota, Avaliações e distancias comentados pois não estão sendo utilizadas ainda.
-    // <small>★ ${escaparHtml(profissional.nota)} · ${escaparHtml(profissional.avaliacoes)} avaliações</small><br>
-    // <span class="tag">${escaparHtml(profissional.servicos)}</span><br>
-    // <b>R$ ${escaparHtml(profissional.preco)}/diária</b>
-    const zonas = (profissional.zonas || []).map(zona => `Zona ${zona.charAt(0) + zona.slice(1).toLowerCase()}`).join(', ');
 
     return `
         <div class="pro ${classeSelecionado}">
-            <div class="av">${escaparHtml(iniciais(profissional.nome))}</div>
+            ${criarAvatar(profissional)}
             <div>
                 <b>${escaparHtml(profissional.nome)}</b><br>
-                <small>${escaparHtml(zonas)}</small>
+                <small>${escaparHtml(textoDaNota(profissional.notaMedia, profissional.totalAvaliacoes))}</small><br>
+                <small>${escaparHtml(textoDasZonas(profissional.zonas))}</small>
             </div>
             <a class="btn" href="perfil.html?id=${escaparHtml(profissional.id)}">Ver perfil</a>
         </div>
     `;
 }
 
-async function carregarBusca(zona) {
-    const profissionais = await buscarProfissionais(zona);
+async function carregarBusca(zona, servico) {
+    const profissionais = await buscarProfissionais(zona, servico);
 
     document.querySelector('#lista').innerHTML = profissionais.length
         ? profissionais.map(criarItemDaBusca).join('')
@@ -476,13 +556,21 @@ function contarDiaristasPorZona(profissionais) {
 }
 
 async function iniciarBusca() {
-    // A zona é escolhida só pelo mapa. '' = todas as zonas.
+    // A zona é escolhida pelo mapa e o serviço pelo select. '' = sem filtro.
     let zonaAtual = '';
+    let servicoAtual = '';
 
     function filtrarPorZona(zona) {
         zonaAtual = zona;
         destacarZonaNoMapa(zona);
-        carregarBusca(zona);
+        carregarBusca(zonaAtual, servicoAtual);
+    }
+
+    // Trocar o serviço muda também quantas diaristas cada zona do mapa tem.
+    async function filtrarPorServico(servico) {
+        servicoAtual = servico;
+        contarDiaristasPorZona(await buscarProfissionais('', servicoAtual));
+        carregarBusca(zonaAtual, servicoAtual);
     }
 
     // Clicar numa zona filtra; clicar de novo na zona já destacada volta para todas.
@@ -494,11 +582,17 @@ async function iniciarBusca() {
     aoAcionar(document.querySelector('.zona-todas'), () => filtrarPorZona(''));
     destacarZonaNoMapa('');
 
-    // Os tipos vêm do back (mesmo endpoint da tela Solicitar). O filtro por serviço é da frente de serviços/preço.
-    buscarTiposDeServico().then(tipos => preencherTiposDeServico(document.querySelector('#filtroServico'), tipos));
+    // Os tipos vêm do back (mesmo endpoint da tela Solicitar), com a opção "Todos os serviços" na frente.
+    const campoServico = document.querySelector('#filtroServico');
+    campoServico.addEventListener('change', () => filtrarPorServico(campoServico.value));
+    buscarTiposDeServico().then(tipos => {
+        preencherTiposDeServico(campoServico, tipos);
+        campoServico.insertAdjacentHTML('afterbegin', '<option value="">Todos os serviços</option>');
+        campoServico.value = '';
+    });
 
     // A primeira carga traz todas as diaristas, então serve também para as contagens do mapa.
-    contarDiaristasPorZona(await carregarBusca(''));
+    contarDiaristasPorZona(await carregarBusca('', ''));
 
     // Vindo da Home com ?zona=NORTE, já aplica o filtro. Zona que não existe no mapa é ignorada.
     const zonaDaUrl = new URLSearchParams(window.location.search).get('zona');
@@ -509,6 +603,43 @@ async function iniciarBusca() {
 }
 
 // ---------- Perfil (perfil.html) ----------
+
+const TAMANHO_AVATAR_PERFIL = 'width:80px;height:80px;font-size:26px';
+
+// Tags de serviço com o preço, que vem do enum TipoServico pelo GET /solicitacoes/tipos.
+function criarTagsDeServico(codigos, tipos) {
+    return tipos
+        .filter(tipo => (codigos || []).includes(tipo.codigo))
+        .map(tipo => `<span class="tag">${escaparHtml(tipo.descricao)} · ${escaparHtml(formatarMoeda(tipo.valor))}</span>`)
+        .join('');
+}
+
+function criarItemDeAvaliacao(avaliacao) {
+    const comentario = avaliacao.comentario ? ` ${escaparHtml(avaliacao.comentario)}` : '';
+    return `
+        <p>
+            <b>${escaparHtml(nomeCurto(avaliacao.avaliadorNome))}</b> ${estrelas(avaliacao.nota)}${comentario}<br>
+            <small>${escaparHtml(formatarData(avaliacao.criadaEm))}</small>
+        </p>
+    `;
+}
+
+function preencherPerfil(diarista, tipos, avaliacoes) {
+    document.querySelector('#nomeDiarista').textContent = diarista.nome;
+    document.querySelector('#avDiarista').innerHTML = criarAvatar(diarista, TAMANHO_AVATAR_PERFIL);
+    document.querySelector('#notaDiarista').textContent = textoDaNota(diarista.notaMedia, diarista.totalAvaliacoes);
+    document.querySelector('#sobreDiarista').textContent = diarista.sobre || 'Sem descrição ainda.';
+
+    const zonas = (diarista.zonas || []).map(zona => `<span class="tag">${escaparHtml(nomeDaZona(zona))}</span>`).join('');
+    document.querySelector('#zonasDiarista').innerHTML = zonas || '<small>Nenhuma zona informada.</small>';
+
+    const servicos = criarTagsDeServico(diarista.servicos, tipos);
+    document.querySelector('#servicosDiarista').innerHTML = servicos || '<small>Nenhum serviço cadastrado ainda.</small>';
+
+    document.querySelector('#avaliacoesDiarista').innerHTML = avaliacoes.length
+        ? avaliacoes.map(criarItemDeAvaliacao).join('')
+        : '<p>Ainda não há avaliações.</p>';
+}
 
 async function iniciarPerfil() {
     // Leva o id da profissional (perfil.html?id=3) para a tela de solicitação.
@@ -528,16 +659,17 @@ async function iniciarPerfil() {
         if (!idDiarista) {
             throw new Error('Perfil aberto sem id da diarista');
         }
-        const diarista = await buscarDiarista(idDiarista);
-        campoNome.textContent = diarista.nome;
-        avatar.textContent = iniciais(diarista.nome);
-        // notas da diarista, comentados pois não estão implementados ainda
-        // document.querySelector('#notaDiarista').textContent =
-        //     `★ ${diarista.nota} (${diarista.avaliacoes} avaliações)`;
+        // As três buscas são independentes, então rodam ao mesmo tempo.
+        const [diarista, tipos, avaliacoes] = await Promise.all([
+            buscarDiarista(idDiarista),
+            buscarTiposDeServico(),
+            buscarAvaliacoesRecebidas(idDiarista)
+        ]);
+        preencherPerfil(diarista, tipos, avaliacoes);
     } catch (falha) {
         console.error(falha);
         campoNome.textContent = 'Diarista não encontrada';
-        avatar.textContent = '?';
+        avatar.innerHTML = criarAvatar(null, TAMANHO_AVATAR_PERFIL);
         botaoAgendar.disabled = true;
 
         const botaoMensagem = document.querySelector('#enviarMensagem');
@@ -607,19 +739,24 @@ function criarAcoesDoPedido(pedido) {
         return `${tag}<br><button class="btn conc">Concluir</button>`;
     }
 
-    return tag;
+    // Concluído: a diarista pode avaliar o cliente (é um link, então o clique não passa por tratarCliqueNoPedido).
+    return tag + criarAcaoDeAvaliar(pedido, 'Avaliar cliente');
 }
 
 function criarCartaoPedido(pedido) {
     const observacoes = pedido.observacoes
         ? `<br><small>Obs.: ${escaparHtml(pedido.observacoes)}</small>`
         : '';
+    // Nota que outras diaristas deram para esse cliente (null se ele ainda não foi avaliado).
+    const notaCliente = pedido.notaCliente !== null && pedido.notaCliente !== undefined
+        ? ` · ★ ${escaparHtml(formatarMedia(pedido.notaCliente))}`
+        : '';
 
     return `
         <div class="req" data-id="${escaparHtml(pedido.id)}">
             <div>
                 <b>${escaparHtml(pedido.titulo)}</b><br>
-                <small>Cliente: ${escaparHtml(pedido.cliente)}</small><br>
+                <small>Cliente: ${escaparHtml(pedido.cliente)}${notaCliente}</small><br>
                 <small>${escaparHtml(formatarDataHora(pedido.data, pedido.hora))} · ${escaparHtml(pedido.endereco)}</small>
                 ${observacoes}
             </div>
@@ -865,6 +1002,18 @@ const MENSAGEM_SEM_SOLICITACOES = {
     Recusadas: 'Nenhuma solicitação recusada.'
 };
 
+// Serviço concluído pode ser avaliado uma vez (o back confere de novo e devolve 409 se repetir).
+// Usado na lista da cliente e na Agenda da diarista.
+function criarAcaoDeAvaliar(solicitacao, textoDoBotao) {
+    if (solicitacao.status !== 'CONCLUIDA') {
+        return '';
+    }
+    if (solicitacao.jaAvaliada) {
+        return ' <span class="tag">Você já avaliou</span>';
+    }
+    return `<br><a class="btn" style="margin-top:8px" href="avaliar.html?solicitacao=${escaparHtml(solicitacao.id)}">${textoDoBotao}</a>`;
+}
+
 function criarCartaoSolicitacao(solicitacao) {
     const exibicao = EXIBICAO_DO_STATUS[solicitacao.status];
 
@@ -873,7 +1022,7 @@ function criarCartaoSolicitacao(solicitacao) {
             <b>${escaparHtml(solicitacao.titulo)}</b><br>
             Diarista: ${escaparHtml(solicitacao.diarista)}<br>
             ${escaparHtml(formatarDataHora(solicitacao.data, solicitacao.hora))} · ${escaparHtml(formatarMoeda(solicitacao.valor))}<br>
-            <span class="tag ${exibicao.classe}">${exibicao.texto}</span>
+            <span class="tag ${exibicao.classe}">${exibicao.texto}</span>${criarAcaoDeAvaliar(solicitacao, 'Avaliar diarista')}
         </div>
     `;
 }
@@ -938,22 +1087,23 @@ function atualizarResumoDoPedido(select, tipos) {
     document.querySelector('#rv').textContent = tipoEscolhido ? formatarMoeda(tipoEscolhido.valor) : '';
 }
 
+// Devolve a diarista vinda do back, ou null se não veio id na URL ou ela não existe.
 async function carregarDiarista(idDiarista) {
     const campoNome = document.querySelector('#rp');
 
     if (!idDiarista) {
         campoNome.textContent = 'Não selecionada';
-        return false;
+        return null;
     }
 
     try {
         const diarista = await buscarDiarista(idDiarista);
         campoNome.textContent = diarista.nome;
-        return true;
+        return diarista;
     } catch (falha) {
         console.error(falha);
         campoNome.textContent = 'Não encontrada';
-        return false;
+        return null;
     }
 }
 
@@ -1033,22 +1183,29 @@ function iniciarSolicitar() {
             window.location.href = 'solicitacoes.html';
         } catch (falha) {
             console.error(falha);
-            mensagemErro.textContent = 'Não foi possível enviar o pedido. Tente novamente.';
+            mensagemErro.textContent = falha.mensagemDoServidor || 'Não foi possível enviar o pedido. Tente novamente.';
             botaoEnviar.disabled = false;
         }
     });
 
     // As duas buscas são independentes, então rodam ao mesmo tempo.
-    return Promise.all([
-        buscarTiposDeServico().then(resultado => {
-            tipos = resultado;
+    return Promise.all([buscarTiposDeServico(), carregarDiarista(idDiarista)])
+        .then(([todosOsTipos, diarista]) => {
+            diaristaValida = diarista !== null;
+
+            // Só os serviços que a diarista oferece. O back confere de novo ao salvar.
+            tipos = diarista
+                ? todosOsTipos.filter(tipo => (diarista.servicos || []).includes(tipo.codigo))
+                : todosOsTipos;
+
+            if (diarista && tipos.length === 0) {
+                botaoEnviar.disabled = true;
+                mensagemErro.textContent = 'Essa diarista ainda não escolheu os serviços que oferece.';
+            }
+
             preencherTiposDeServico(campos.tipo, tipos);
             atualizarResumoDoPedido(campos.tipo, tipos);
-        }),
-        carregarDiarista(idDiarista).then(valida => {
-            diaristaValida = valida;
-        })
-    ]);
+        });
 }
 
 // ---------- Mensagens (mensagens.html) ----------
@@ -1328,6 +1485,80 @@ async function iniciarEditarPerfil() {
     atualizarPrevia();
 }
 
+// ---------- Avaliar (avaliar.html) ----------
+
+// A solicitação chega pela URL: avaliar.html?solicitacao=7 (vem do botão Avaliar da lista ou da Agenda).
+// A tela busca a solicitação na lista do próprio usuário, então ninguém avalia um serviço que não é dele.
+// O back confere tudo de novo: participou (403), está concluída e ainda não foi avaliada (409).
+async function iniciarAvaliar() {
+    // validarAcesso já garantiu que tem alguém logado.
+    const usuario = obterUsuarioLogado();
+    const ehDiarista = usuario.identify === 'DIARIST';
+    const paginaDeVolta = ehDiarista ? 'agenda.html' : 'solicitacoes.html';
+
+    const form = document.querySelector('#formAvaliar');
+    const resumo = document.querySelector('#resumoServico');
+    const mensagemErro = document.querySelector('#erroAvaliar');
+    const botaoEnviar = document.querySelector('#enviarAvaliacao');
+    const campoComentario = document.querySelector('#comentario');
+    const idSolicitacao = Number(new URLSearchParams(window.location.search).get('solicitacao'));
+
+    document.querySelector('#voltar').href = paginaDeVolta;
+
+    // Mostra o motivo e trava o formulário (serviço não encontrado, não concluído ou já avaliado).
+    function bloquear(motivo) {
+        mensagemErro.textContent = motivo;
+        botaoEnviar.disabled = true;
+    }
+
+    form.addEventListener('submit', async evento => {
+        evento.preventDefault();
+
+        const notaMarcada = form.querySelector('input[name="nota"]:checked');
+        if (!notaMarcada) {
+            mensagemErro.textContent = 'Escolha uma nota de 1 a 5 estrelas.';
+            return;
+        }
+
+        mensagemErro.textContent = '';
+        botaoEnviar.disabled = true;
+
+        try {
+            await enviarAvaliacao({
+                solicitacaoId: idSolicitacao,
+                avaliadorId: usuario.id,
+                nota: Number(notaMarcada.value),
+                comentario: campoComentario.value.trim()
+            });
+            alert('Avaliação enviada! Obrigado.');
+            window.location.href = paginaDeVolta;
+        } catch (falha) {
+            console.error(falha);
+            mensagemErro.textContent = falha.mensagemDoServidor || 'Não foi possível enviar a avaliação. Tente novamente.';
+            botaoEnviar.disabled = false;
+        }
+    });
+
+    const solicitacoes = ehDiarista ? await buscarPedidos(usuario.id) : await buscarSolicitacoes(usuario.id);
+    const solicitacao = solicitacoes.find(item => item.id === idSolicitacao);
+
+    if (!solicitacao) {
+        resumo.textContent = 'Serviço não encontrado.';
+        bloquear('Abra a avaliação pelo botão Avaliar da sua lista de serviços.');
+        return;
+    }
+
+    const avaliado = ehDiarista ? solicitacao.cliente : solicitacao.diarista;
+    document.querySelector('#nomeAvaliado').textContent = avaliado;
+    resumo.textContent = `${solicitacao.titulo} · ${formatarDataHora(solicitacao.data, solicitacao.hora)}`;
+
+    if (solicitacao.status !== 'CONCLUIDA') {
+        bloquear('Só é possível avaliar depois que o serviço for concluído.');
+    } else if (solicitacao.jaAvaliada) {
+        bloquear('Você já avaliou esse serviço.');
+    }
+}
+
 // ---------- Login e cadastro (login.html e cadastro.html) ----------
 
 // Aqui ficam as abas ENTRAR/CADASTRAR e o 👁 que mostra a senha.
@@ -1365,7 +1596,8 @@ const INICIALIZADORES_DE_PAGINA = {
     mensagens: iniciarMensagens,
     login: iniciarAutenticacao,
     cadastro: iniciarAutenticacao,
-    editarPerfil: iniciarEditarPerfil
+    editarPerfil: iniciarEditarPerfil,
+    avaliar: iniciarAvaliar
 };
 
 async function iniciarAplicacao() {

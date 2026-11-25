@@ -32,7 +32,7 @@ public class User {
     @Column(nullable = false)
     private Identification identify;
 
-    // Cliente: exatamente 1 zona. Diarista: 1 ou mais. A validação dessa regra fica no service (outra frente).
+    // Cliente: exatamente 1 zona. Diarista: 1 ou mais. A regra fica no UserService (validarZonasEServicos).
     // EAGER: o conjunto é pequeno (no máximo 4 valores) e aparece em toda resposta de usuário.
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "usuario_zonas", joinColumns = @JoinColumn(name = "usuario_id"))

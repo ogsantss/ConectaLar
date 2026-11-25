@@ -6,6 +6,7 @@ import com.conectaLar.conectaLar.entity.Solicitacao;
 import com.conectaLar.conectaLar.entity.User;
 import com.conectaLar.conectaLar.enums.Identification;
 import com.conectaLar.conectaLar.enums.StatusSolicitacao;
+import com.conectaLar.conectaLar.repository.AvaliacaoRepository;
 import com.conectaLar.conectaLar.repository.SolicitacaoRepository;
 import com.conectaLar.conectaLar.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -23,15 +24,23 @@ public class SolicitacaoService {
 
     private final SolicitacaoRepository solicitacaoRepository;
     private final UserRepository userRepository;
+    private final AvaliacaoRepository avaliacaoRepository;
 
-    public SolicitacaoService(SolicitacaoRepository solicitacaoRepository, UserRepository userRepository) {
+    public SolicitacaoService(SolicitacaoRepository solicitacaoRepository, UserRepository userRepository,
+                              AvaliacaoRepository avaliacaoRepository) {
         this.solicitacaoRepository = solicitacaoRepository;
         this.userRepository = userRepository;
+        this.avaliacaoRepository = avaliacaoRepository;
     }
 
     public SolicitacaoResponseDTO criar(SolicitacaoCreateDTO dados) {
         User cliente = buscarUsuario(dados.getClienteId(), Identification.CLIENT, "Cliente não encontrada.");
         User diarista = buscarUsuario(dados.getDiaristaId(), Identification.DIARIST, "Diarista não encontrada.");
+
+        // Só dá para contratar um serviço que a diarista marcou no perfil.
+        if (!diarista.getServicos().contains(dados.getTipoServico())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Essa diarista não oferece esse serviço.");
+        }
 
         // Pedidos recusados ou concluídos não ocupam o horário, só os que ainda estão reservados.
         boolean horarioOcupado = solicitacaoRepository.existsByDiaristaIdAndDataAndHoraAndStatusIn(
@@ -57,12 +66,28 @@ public class SolicitacaoService {
 
     public List<SolicitacaoResponseDTO> listarDaCliente(long clienteId) {
         return solicitacaoRepository.findByClienteIdOrderByDataDescHoraDesc(clienteId)
-                .stream().map(SolicitacaoResponseDTO::new).toList();
+                .stream().map(solicitacao -> montarResposta(solicitacao, clienteId)).toList();
     }
 
     public List<SolicitacaoResponseDTO> listarDaDiarista(long diaristaId) {
         return solicitacaoRepository.findByDiaristaIdOrderByDataAscHoraAsc(diaristaId)
-                .stream().map(SolicitacaoResponseDTO::new).toList();
+                .stream().map(solicitacao -> montarRespostaParaDiarista(solicitacao, diaristaId)).toList();
+    }
+
+    // jaAvaliada diz se quem está vendo a lista já avaliou o serviço. Só serviço concluído pode
+    // ser avaliado, então só nele vale a pena perguntar ao banco.
+    private SolicitacaoResponseDTO montarResposta(Solicitacao solicitacao, long usuarioId) {
+        SolicitacaoResponseDTO resposta = new SolicitacaoResponseDTO(solicitacao);
+        resposta.setJaAvaliada(solicitacao.getStatus() == StatusSolicitacao.CONCLUIDA
+                && avaliacaoRepository.existsBySolicitacaoIdAndAvaliadorId(solicitacao.getId(), usuarioId));
+        return resposta;
+    }
+
+    // A diarista também vê a nota do cliente, que ajuda a decidir se aceita o pedido.
+    private SolicitacaoResponseDTO montarRespostaParaDiarista(Solicitacao solicitacao, long diaristaId) {
+        SolicitacaoResponseDTO resposta = montarResposta(solicitacao, diaristaId);
+        resposta.setNotaCliente(avaliacaoRepository.calcularMedia(solicitacao.getCliente().getId()));
+        return resposta;
     }
 
     // Garante que o id existe e é do tipo certo (ex: não dá para "contratar" outra cliente).
@@ -101,7 +126,7 @@ public class SolicitacaoService {
                     "Não é possível aceitar um serviço cuja data já passou.");
         }
         solicitacao.setStatus(novoStatus);
-        return new SolicitacaoResponseDTO(solicitacaoRepository.save(solicitacao));
+        return montarRespostaParaDiarista(solicitacaoRepository.save(solicitacao), diaristaId);
     }
 
     public SolicitacaoResponseDTO concluir(Long solicitacaoId, Long diaristaId) {
@@ -115,7 +140,7 @@ public class SolicitacaoService {
                     "Só é possível concluir o serviço a partir do dia marcado.");
         }
         solicitacao.setStatus(StatusSolicitacao.CONCLUIDA);
-        return new SolicitacaoResponseDTO(solicitacaoRepository.save(solicitacao));
+        return montarRespostaParaDiarista(solicitacaoRepository.save(solicitacao), diaristaId);
     }
 
 }

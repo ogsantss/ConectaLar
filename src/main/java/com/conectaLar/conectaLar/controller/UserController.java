@@ -3,6 +3,7 @@ package com.conectaLar.conectaLar.controller;
 import com.conectaLar.conectaLar.dto.LoginRequestDTO;
 import com.conectaLar.conectaLar.dto.UserCreateDTO;
 import com.conectaLar.conectaLar.dto.UserResponseDTO;
+import com.conectaLar.conectaLar.enums.TipoServico;
 import com.conectaLar.conectaLar.enums.Zona;
 import com.conectaLar.conectaLar.service.UserService;
 import jakarta.validation.Valid;
@@ -36,9 +37,11 @@ public class UserController {
     }
 
     // Usado pela Home e pela Busca para listar as profissionais cadastradas.
+    // Os dois filtros são opcionais: /usuarios/diaristas?zona=SUL&servico=PASSAR_ROUPA
     @GetMapping("/diaristas")
-    public List<UserResponseDTO> listDiarists(@RequestParam(required = false) Zona zona) {
-        return userService.listDiarists(zona);
+    public List<UserResponseDTO> listDiarists(@RequestParam(required = false) Zona zona,
+                                              @RequestParam(required = false) TipoServico servico) {
+        return userService.listDiarists(zona, servico);
     }
 
     // Usado pelo Perfil e pela tela Solicitar Serviço para mostrar o nome da profissional.

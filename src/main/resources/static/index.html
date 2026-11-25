@@ -10,11 +10,10 @@
 
 <body data-page="index">
     <main class="wrap">
-        <section id="home" class="hero"><span class="tag" style="align-self:flex-start">PROFISSIONAIS CHECADAS &amp;
-                GARANTIDAS</span>
+        <section id="home" class="hero"><span class="tag" style="align-self:flex-start">DIARISTAS DA SUA REGIÃO</span>
             <h1>SUA CASA IMPECÁVEL COM <span>ZERO COMPLICAÇÃO.</span></h1>
-            <p style="max-width:520px;margin-top:14px">Conectamos você às melhores diaristas da sua região em segundos.
-                Agendamento digital, pagamento seguro e garantia total de satisfação.</p>
+            <p style="max-width:520px;margin-top:14px">Conectamos você às diaristas que atendem na sua zona.
+                Agendamento digital, chat com a profissional e avaliações de quem já contratou.</p>
             <!-- Já abre na zona do cliente logado (configurarBuscaPorZona, em app.js). -->
             <div class="filtro-home">
                 <select id="zonaHome" aria-label="Zona">
@@ -33,14 +32,14 @@
             <p class="sub rev">Tudo o que você precisa para ter a casa em ordem, sem dor de cabeça.</p>
             <div class="cols">
                 <div class="card rev">
-                    <div class="ico">✅</div>
-                    <h3>Profissionais checadas</h3>
-                    <p>Antecedentes e documentos verificados.</p>
+                    <div class="ico">📍</div>
+                    <h3>Perto de você</h3>
+                    <p>Filtre por zona e veja quem atende na sua região.</p>
                 </div>
                 <div class="card rev">
-                    <div class="ico">🔒</div>
-                    <h3>Pagamento seguro</h3>
-                    <p>O valor só é liberado após o serviço.</p>
+                    <div class="ico">⭐</div>
+                    <h3>Avaliações reais</h3>
+                    <p>Só quem contratou e teve o serviço concluído pode avaliar.</p>
                 </div>
                 <div class="card rev">
                     <div class="ico">📅</div>
@@ -48,9 +47,9 @@
                     <p>Escolha dia e horário em poucos cliques.</p>
                 </div>
                 <div class="card rev">
-                    <div class="ico">🛡️</div>
-                    <h3>Garantia de satisfação</h3>
-                    <p>Não gostou? Refazemos sem custo.</p>
+                    <div class="ico">💬</div>
+                    <h3>Chat com a profissional</h3>
+                    <p>Tire suas dúvidas antes de agendar.</p>
                 </div>
             </div>
         </section>
@@ -62,13 +61,9 @@
         </section>
         <section id="avaliacoes" class="sec">
             <h2 class="rev">O que dizem nossos clientes</h2>
-            <p class="sub rev">Mais de 1.000 diárias concluídas.</p>
-            <div class="cols">
-                <div class="card rev">★★★★★<p>“Chegou no horário e deixou tudo impecável.”</p><b>Carla M.</b></div>
-                <div class="card rev">★★★★★<p>“Muito atenciosa e rápida. Pagamento seguro pelo app.”</p><b>Roberto
-                        S.</b></div>
-                <div class="card rev">★★★★★<p>“Agendei em minutos, super prático.”</p><b>Juliana P.</b></div>
-            </div>
+            <p class="sub rev">As avaliações mais recentes de quem já contratou pela conectaLar.</p>
+            <!-- Preenchido pelo app.js com GET /avaliacoes/recentes (iniciarHome). -->
+            <div class="cols" id="depoimentos"></div>
             <div class="cta rev" style="margin-top:40px">
                 <h2 style="color:#fff">Pronto para ter a casa em ordem?</h2><a class="btn" href="cadastro.html">Criar
                     conta</a><a class="btn" href="login.html">Conectar</a>
