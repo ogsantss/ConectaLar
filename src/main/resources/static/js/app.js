@@ -60,6 +60,19 @@ async function buscarDiarista(idDiarista) {
     return requisicaoApi(`/usuarios/diaristas/${encodeURIComponent(idDiarista)}`);
 }
 
+// Editar perfil: dados públicos de qualquer usuário, lista de avatares e o PUT que salva.
+async function buscarUsuario(idUsuario) {
+    return requisicaoApi(`/usuarios/${encodeURIComponent(idUsuario)}`);
+}
+
+async function buscarAvatares() {
+    return requisicaoApi('/usuarios/avatares');
+}
+
+async function salvarPerfil(idUsuario, dados) {
+    return requisicaoApi(`/usuarios/${encodeURIComponent(idUsuario)}`, 'PUT', dados);
+}
+
 async function aceitarPedido(idPedido, idDiarista) {
     return requisicaoApi(`/solicitacoes/${encodeURIComponent(idPedido)}/aceitar`, 'PATCH', {diaristaId: idDiarista});
 }
@@ -140,6 +153,24 @@ function iniciais(nome) {
     return String(nome).trim().split(/\s+/).slice(0, 2).map(parte => parte[0]).join('').toUpperCase();
 }
 
+// Bolinha do usuário: o avatar escolhido no perfil ou, se não houver, as iniciais do nome.
+// Devolve HTML pronto para usar dentro de um template, por exemplo:
+//   `<div class="pro">${criarAvatar(profissional)} ...</div>`
+//   criarAvatar(diarista, 'width:80px;height:80px;font-size:26px')  -> tamanho maior
+// O back só guarda o código ("avatar3"); a imagem fica em img/avatares/avatar3.svg.
+function criarAvatar(usuario, estilo = '') {
+    const nome = usuario && usuario.nome ? usuario.nome : '?';
+    const atributoEstilo = estilo ? ` style="${escaparHtml(estilo)}"` : '';
+
+    if (usuario && usuario.avatar) {
+        return `<div class="av"${atributoEstilo}>`
+            + `<img src="img/avatares/${escaparHtml(usuario.avatar)}.svg" alt="Avatar de ${escaparHtml(nome)}">`
+            + `</div>`;
+    }
+
+    return `<div class="av"${atributoEstilo}>${escaparHtml(iniciais(nome))}</div>`;
+}
+
 // Formata um número como dinheiro brasileiro: 150 -> "R$ 150,00".
 function formatarMoeda(valor) {
     return Number(valor).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
@@ -184,7 +215,8 @@ const PERFIS_POR_PAGINA = {
     solicitar: ['CLIENT'],
     solicitacoes: ['CLIENT'],
     agenda: ['DIARIST'],
-    mensagens: ['CLIENT', 'DIARIST']
+    mensagens: ['CLIENT', 'DIARIST'],
+    editarPerfil: ['CLIENT', 'DIARIST']
 };
 
 const PAGINAS_PUBLICAS = ['index', 'login', 'cadastro'];
@@ -253,7 +285,7 @@ function criarHeader(usuario) {
                 ${usuario ? '<a href="mensagens.html" data-p="mensagens">Mensagens</a>' : ''}`;
 
     const menuConta = usuario
-        ? '<a href="#" id="sair">Sair</a>'
+        ? '<a href="editar-perfil.html">Editar perfil</a><a href="#" id="sair">Sair</a>'
         : '<a href="login.html">Conectar</a><a href="cadastro.html">Criar conta</a>';
 
     document.body.insertAdjacentHTML('afterbegin', `
@@ -1152,6 +1184,150 @@ async function iniciarMensagens() {
     setInterval(carregarMensagens, 3000);
 }
 
+// ---------- Editar perfil (editar-perfil.html) ----------
+
+// Tamanho das bolinhas na escolha de avatar e na prévia.
+const TAMANHO_OPCAO_AVATAR = 'width:56px;height:56px;margin:auto';
+const TAMANHO_PREVIA_AVATAR = 'width:72px;height:72px;font-size:24px';
+
+// Uma opção "sem avatar" (mostra as iniciais) e uma para cada código vindo do back.
+function criarOpcoesDeAvatar(codigos, nome) {
+    return ['', ...codigos].map(codigo => `
+        <label class="role-opt">
+            <input type="radio" name="avatar" value="${escaparHtml(codigo)}">
+            <span>${criarAvatar({nome, avatar: codigo}, TAMANHO_OPCAO_AVATAR)}</span>
+        </label>
+    `).join('');
+}
+
+// Um checkbox para cada tipo de serviço (mesmo endpoint da tela Solicitar).
+function criarOpcoesDeServico(tipos) {
+    return tipos.map(tipo => `
+        <label class="role-opt">
+            <input type="checkbox" name="servico" value="${escaparHtml(tipo.codigo)}">
+            <span>${escaparHtml(tipo.descricao)}</span>
+        </label>
+    `).join('');
+}
+
+// Valores dos checkboxes marcados com esse name. Ex: valoresMarcados(form, 'zona') -> ['SUL', 'OESTE']
+function valoresMarcados(form, nome) {
+    return [...form.querySelectorAll(`input[name="${nome}"]:checked`)].map(campo => campo.value);
+}
+
+// Marca os checkboxes cujo valor está na lista (usado para carregar o que já está salvo).
+function marcarValores(form, nome, valores) {
+    form.querySelectorAll(`input[name="${nome}"]`).forEach(campo => {
+        campo.checked = (valores || []).includes(campo.value);
+    });
+}
+
+// As mesmas regras do back, para avisar antes de enviar. O back confere de novo de qualquer jeito.
+function validarPerfil(dados, ehDiarista) {
+    if (dados.sobre.length > 500) return 'O texto Sobre pode ter no máximo 500 caracteres.';
+    if (dados.zonas.length === 0) return 'Escolha pelo menos uma zona.';
+    if (ehDiarista && dados.servicos.length === 0) return 'Escolha pelo menos um serviço.';
+    return '';
+}
+
+async function iniciarEditarPerfil() {
+    // validarAcesso já garantiu que tem alguém logado.
+    const usuarioLogado = obterUsuarioLogado();
+    const ehDiarista = usuarioLogado.identify === 'DIARIST';
+
+    const form = document.querySelector('#formPerfil');
+    const mensagemErro = document.querySelector('#erroPerfil');
+    const mensagemSucesso = document.querySelector('#sucessoPerfil');
+    const botaoSalvar = document.querySelector('#salvar');
+    const contador = document.querySelector('#contadorSobre');
+    const previa = document.querySelector('#previaAvatar');
+    const campoSobre = document.querySelector('#sobre');
+    const campoZonaCliente = document.querySelector('#zonaCliente');
+
+    // Cada perfil vê só os campos dele.
+    document.querySelector(ehDiarista ? '#camposDiarista' : '#camposCliente').hidden = false;
+
+    function avatarEscolhido() {
+        const marcado = form.querySelector('input[name="avatar"]:checked');
+        return marcado && marcado.value ? marcado.value : null;
+    }
+
+    function atualizarPrevia() {
+        previa.innerHTML = criarAvatar({nome: usuarioLogado.nome, avatar: avatarEscolhido()}, TAMANHO_PREVIA_AVATAR);
+    }
+
+    function atualizarContador() {
+        contador.textContent = `${campoSobre.value.length}/500`;
+    }
+
+    campoSobre.addEventListener('input', atualizarContador);
+
+    form.addEventListener('change', evento => {
+        if (evento.target.name === 'avatar') {
+            atualizarPrevia();
+        }
+    });
+
+    form.addEventListener('submit', async evento => {
+        evento.preventDefault();
+        mensagemSucesso.textContent = '';
+
+        const dados = {
+            usuarioLogadoId: usuarioLogado.id,
+            sobre: campoSobre.value.trim(),
+            avatar: avatarEscolhido(),
+            zonas: ehDiarista ? valoresMarcados(form, 'zona') : [campoZonaCliente.value],
+            servicos: ehDiarista ? valoresMarcados(form, 'servico') : []
+        };
+
+        mensagemErro.textContent = validarPerfil(dados, ehDiarista);
+        if (mensagemErro.textContent) {
+            return;
+        }
+
+        botaoSalvar.disabled = true;
+
+        try {
+            const usuarioAtualizado = await salvarPerfil(usuarioLogado.id, dados);
+            // A resposta do PUT tem os dados completos: substitui o usuário salvo no login.
+            localStorage.setItem('usuario', JSON.stringify(usuarioAtualizado));
+            mensagemSucesso.textContent = 'Perfil salvo!';
+        } catch (falha) {
+            console.error(falha);
+            mensagemErro.textContent = 'Não foi possível salvar o perfil. Tente novamente.';
+        } finally {
+            botaoSalvar.disabled = false;
+        }
+    });
+
+    // As buscas são independentes, então rodam ao mesmo tempo. A cliente não precisa dos tipos de serviço.
+    const [usuario, avatares, tipos] = await Promise.all([
+        buscarUsuario(usuarioLogado.id),
+        buscarAvatares(),
+        ehDiarista ? buscarTiposDeServico() : []
+    ]);
+
+    document.querySelector('#nomeUsuario').textContent = usuario.nome;
+    document.querySelector('#tipoUsuario').textContent = ehDiarista ? 'Diarista' : 'Cliente';
+
+    // insertAdjacentHTML para não apagar o <legend> que já está no fieldset.
+    document.querySelector('#avatares').insertAdjacentHTML('beforeend', criarOpcoesDeAvatar(avatares, usuario.nome));
+    document.querySelector('#servicos').insertAdjacentHTML('beforeend', criarOpcoesDeServico(tipos));
+
+    // Preenche o formulário com o que já está salvo no banco.
+    campoSobre.value = usuario.sobre || '';
+    marcarValores(form, 'avatar', [usuario.avatar || '']);
+    if (ehDiarista) {
+        marcarValores(form, 'zona', usuario.zonas);
+        marcarValores(form, 'servico', usuario.servicos);
+    } else if (usuario.zonas && usuario.zonas.length) {
+        campoZonaCliente.value = usuario.zonas[0];
+    }
+
+    atualizarContador();
+    atualizarPrevia();
+}
+
 // ---------- Login e cadastro (login.html e cadastro.html) ----------
 
 // Aqui ficam as abas ENTRAR/CADASTRAR e o 👁 que mostra a senha.
@@ -1188,7 +1364,8 @@ const INICIALIZADORES_DE_PAGINA = {
     solicitar: iniciarSolicitar,
     mensagens: iniciarMensagens,
     login: iniciarAutenticacao,
-    cadastro: iniciarAutenticacao
+    cadastro: iniciarAutenticacao,
+    editarPerfil: iniciarEditarPerfil
 };
 
 async function iniciarAplicacao() {
@@ -1218,5 +1395,6 @@ async function iniciarAplicacao() {
         alert('Não foi possível carregar os dados da página. Tente novamente.');
     }
 }
+
 
 iniciarAplicacao();

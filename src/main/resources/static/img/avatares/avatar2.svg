@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Avatar 2">
+  <!-- Avatar 2 do conectaLar: desenho próprio do projeto, livre para uso. -->
+  <circle cx="50" cy="50" r="50" fill="#B5E3D8"/>
+  <path d="M18 100 Q18 74 50 74 Q82 74 82 100Z" fill="#E85D75"/>
+  <rect x="44" y="60" width="12" height="14" rx="4" fill="#C68642"/>
+  <ellipse cx="50" cy="46" rx="20" ry="22" fill="#C68642"/>
+  <path d="M28 46 Q28 20 50 20 Q72 20 72 46 L72 72 L64 72 L64 44 Q58 32 50 32 Q42 32 36 44 L36 72 L28 72Z" fill="#1B1B1B"/>
+  <circle cx="42" cy="47" r="2.5" fill="#2C2C2C"/>
+  <circle cx="58" cy="47" r="2.5" fill="#2C2C2C"/>
+  <path d="M43 56 Q50 61 57 56" stroke="#2C2C2C" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+</svg>
