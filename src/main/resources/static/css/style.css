@@ -341,40 +341,123 @@ h2 {
     fill: var(--pd)
 }
 
-/* As 4 zonas da capital (clicáveis) */
+/* As 4 zonas da capital (clicáveis): um anel redondo, como uma bússola, dividido em 4 quartos.
+   Ao passar o mouse ou escolher, o quarto "sai" do anel na direção da própria zona. */
+.trilho {
+    fill: #f1f8fa
+}
+
 .zona {
     cursor: pointer;
-    outline: none
+    outline: none;
+    transition: transform .2s ease
 }
 
 .zona path {
-    fill: #cfe6ee;
     stroke: #fff;
-    stroke-width: 3;
+    stroke-width: 4;
     stroke-linejoin: round;
     transition: fill .2s
 }
 
-.zona:hover path,
-.zona:focus-visible path {
+/* Um tom para cada zona, para o anel não parecer uma peça só */
+.zona[data-zona="NORTE"] path {
+    fill: #d3eaf2
+}
+
+.zona[data-zona="LESTE"] path {
+    fill: #c5e2ec
+}
+
+.zona[data-zona="SUL"] path {
+    fill: #d8edf1
+}
+
+.zona[data-zona="OESTE"] path {
+    fill: #cbe6ee
+}
+
+/* Estas regras vêm depois dos tons acima para vencerem (mesma especificidade). */
+.zona:hover path {
     fill: #a9d3e1
+}
+
+.zona:focus-visible path {
+    fill: #a9d3e1;
+    stroke: var(--pd)
 }
 
 .zona.on path {
     fill: var(--p)
 }
 
+/* Deslocamento de cada quarto: 4px no hover/foco, 8px quando a zona está escolhida */
+.zona[data-zona="NORTE"]:hover,
+.zona[data-zona="NORTE"]:focus-visible {
+    transform: translateY(-4px)
+}
+
+.zona[data-zona="LESTE"]:hover,
+.zona[data-zona="LESTE"]:focus-visible {
+    transform: translateX(4px)
+}
+
+.zona[data-zona="SUL"]:hover,
+.zona[data-zona="SUL"]:focus-visible {
+    transform: translateY(4px)
+}
+
+.zona[data-zona="OESTE"]:hover,
+.zona[data-zona="OESTE"]:focus-visible {
+    transform: translateX(-4px)
+}
+
+.zona[data-zona="NORTE"].on {
+    transform: translateY(-8px)
+}
+
+.zona[data-zona="LESTE"].on {
+    transform: translateX(8px)
+}
+
+.zona[data-zona="SUL"].on {
+    transform: translateY(8px)
+}
+
+.zona[data-zona="OESTE"].on {
+    transform: translateX(-8px)
+}
+
 .zona text {
     text-anchor: middle;
     font-weight: 700;
-    font-size: 17px;
+    font-size: 16px;
     fill: var(--pd);
     pointer-events: none
 }
 
 .zona text.qtd {
     font-weight: 400;
-    font-size: 13px
+    font-size: 12px
+}
+
+/* Miolo do anel: marca a capital e deixa o clique passar */
+.miolo {
+    pointer-events: none
+}
+
+.miolo circle {
+    fill: #fff;
+    stroke: var(--l);
+    stroke-width: 2
+}
+
+.miolo text {
+    text-anchor: middle;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    fill: var(--p)
 }
 
 .zona.on text {
@@ -427,6 +510,10 @@ h2 {
 @media (prefers-reduced-motion: reduce) {
     .capital .pulso {
         animation: none
+    }
+
+    .zona {
+        transition: none
     }
 }
 
