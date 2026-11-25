@@ -243,18 +243,96 @@ h2 {
 .map {
     min-height: 480px;
     border-radius: 12px;
-    background: radial-gradient(circle at 50% 50%, #0b6f8a33 0 90px, transparent 91px), repeating-linear-gradient(45deg, #e9efe9 0 40px, #f4f6f1 40px 80px);
+    background: linear-gradient(160deg, #f7fbfc, #e4f0f4);
     position: relative
 }
 
-/* Mapa das zonas (busca.html) */
+/* Mapa do estado de SP (busca.html): interior bloqueado, só as zonas da capital clicáveis */
 .mapa-zonas {
     display: block;
     width: 100%;
-    max-height: 480px;
+    max-height: 560px;
     padding: 12px
 }
 
+/* Interior do estado: "bloqueado" */
+.estado path {
+    fill: url(#bloqueado);
+    stroke: #c7d3d9;
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+    cursor: not-allowed
+}
+
+.estado text {
+    text-anchor: middle;
+    pointer-events: none
+}
+
+.estado .cadeado {
+    font-size: 26px;
+    opacity: .55
+}
+
+.estado .em-breve {
+    font-size: 17px;
+    font-weight: 700;
+    fill: #8a9ea7
+}
+
+.estado .em-breve-sub {
+    font-size: 12px;
+    fill: #9fb1b9
+}
+
+/* Capital: miniatura no lugar real + zoom até o cartão com as zonas */
+.capital .mini {
+    fill: var(--p);
+    stroke: #fff;
+    stroke-width: 1.5
+}
+
+.capital .pulso {
+    fill: none;
+    stroke: var(--p);
+    stroke-width: 2;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: pulso 2.2s ease-out infinite
+}
+
+@keyframes pulso {
+    from {
+        transform: scale(.6);
+        opacity: .7
+    }
+
+    to {
+        transform: scale(1.3);
+        opacity: 0
+    }
+}
+
+.capital .zoom {
+    fill: var(--p);
+    opacity: .08
+}
+
+.capital .cartao {
+    fill: #fff;
+    stroke: var(--l);
+    filter: url(#sombra)
+}
+
+.capital .titulo-capital {
+    text-anchor: middle;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    fill: var(--pd)
+}
+
+/* As 4 zonas da capital (clicáveis) */
 .zona {
     cursor: pointer;
     outline: none
@@ -263,7 +341,8 @@ h2 {
 .zona path {
     fill: #cfe6ee;
     stroke: #fff;
-    stroke-width: 4;
+    stroke-width: 3;
+    stroke-linejoin: round;
     transition: fill .2s
 }
 
@@ -279,7 +358,7 @@ h2 {
 .zona text {
     text-anchor: middle;
     font-weight: 700;
-    font-size: 18px;
+    font-size: 17px;
     fill: var(--pd);
     pointer-events: none
 }
@@ -291,6 +370,55 @@ h2 {
 
 .zona.on text {
     fill: #fff
+}
+
+/* Botão "Todas as zonas" dentro do mapa: aceso quando nenhuma zona está escolhida */
+.zona-todas {
+    cursor: pointer;
+    outline: none
+}
+
+.zona-todas rect {
+    fill: #cfe6ee;
+    stroke: #fff;
+    stroke-width: 2;
+    transition: fill .2s
+}
+
+.zona-todas:hover rect,
+.zona-todas:focus-visible rect {
+    fill: #a9d3e1
+}
+
+.zona-todas.on rect {
+    fill: var(--p)
+}
+
+.zona-todas text {
+    text-anchor: middle;
+    font-size: 14px;
+    font-weight: 700;
+    fill: var(--pd);
+    pointer-events: none
+}
+
+.zona-todas.on text {
+    fill: #fff
+}
+
+.legenda text {
+    font-size: 13px;
+    fill: var(--m)
+}
+
+.legenda-ativa {
+    fill: var(--p)
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .capital .pulso {
+        animation: none
+    }
 }
 
 .pin {

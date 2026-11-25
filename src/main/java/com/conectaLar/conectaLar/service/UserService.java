@@ -28,6 +28,15 @@ public class UserService {
         if (userCreateDTO.getIdentify() == Identification.CLIENT && userCreateDTO.getZonas().size() != 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cliente não pode ter mais de uma zona.");
         }
+        // Email e celular são únicos no banco. Conferir antes de salvar devolve 409 com uma
+        // mensagem clara, em vez do 500 genérico que o banco geraria ao recusar a duplicata.
+        // O email é comparado em minúsculas porque é assim que ele é salvo (toEntity).
+        if (userRepository.existsByEmail(userCreateDTO.getEmail().toLowerCase())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email já cadastrado.");
+        }
+        if (userRepository.existsByCelular(userCreateDTO.getCelular())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Celular já cadastrado.");
+        }
         User savedUser = userRepository.save(toEntity(userCreateDTO));
         return toResponseDto(savedUser);
     }

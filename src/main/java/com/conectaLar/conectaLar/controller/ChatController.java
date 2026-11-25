@@ -32,9 +32,11 @@ public class ChatController {
         return chatService.listarConversas(usuarioId);
     }
 
+    // usuarioId é quem está pedindo: o service só devolve as mensagens se ele participar da conversa.
     @GetMapping("/{conversaId}/mensagens")
-    public List<MensagemResponseDTO> listarMensagens(@PathVariable Long conversaId) {
-        return chatService.listarMensagens(conversaId);
+    public List<MensagemResponseDTO> listarMensagens(@PathVariable Long conversaId,
+                                                     @RequestParam Long usuarioId) {
+        return chatService.listarMensagens(conversaId, usuarioId);
     }
 
     @PostMapping("/{conversaId}/mensagens")

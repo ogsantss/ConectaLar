@@ -53,7 +53,14 @@ async function cadastrarUsuario() {
         }
     })
     if (!response.ok) {
-        alert("Não foi possivel cadastrar esse usuario. Status: " + response.status);
+        // Mostra o motivo que o servidor mandou (ex: "Email já cadastrado."). A validação automática
+        // do Spring (@Valid) devolve um texto técnico ("Validation failed..."), então nesse caso
+        // usa uma mensagem genérica.
+        const corpo = await response.json().catch(() => null);
+        const mensagemDoServidor = corpo && corpo.message;
+        erro.textContent = mensagemDoServidor && !mensagemDoServidor.startsWith("Validation failed")
+            ? mensagemDoServidor
+            : "Não foi possível cadastrar. Confira os dados e tente novamente.";
     } else {
         alert('Usuario cadastrado com sucesso!')
         window.location.href = "login.html";
