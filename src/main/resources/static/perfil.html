@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Perfil da profissional - conectaLar</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body data-page="perfil">
+    <main class="wrap grid2">
+        <div class="card">
+            <div style="display:flex;gap:16px;align-items:center">
+                <div class="av" id="avDiarista" style="width:80px;height:80px;font-size:26px"></div>
+                <div>
+                    <h2 style="margin:0" id="nomeDiarista">Carregando...</h2>
+                    <span id="notaDiarista"></span>
+                </div>
+                <a class="btn out" style="margin-left:auto" href="mensagens.html">Enviar mensagem</a>
+            </div>
+
+            <!-- Sobre, serviços e zonas vêm de GET /usuarios/diaristas/{id} (preencherPerfilPublico no app.js). -->
+            <h3 style="margin-top:20px">Sobre</h3>
+            <!-- pre-line mantém as quebras de linha que a diarista digitou. -->
+            <p id="sobreDiarista" style="white-space:pre-line">Carregando...</p>
+
+            <h3 style="margin-top:16px">Serviços oferecidos</h3>
+            <div class="chips" id="servicosDiarista"></div>
+
+            <h3 style="margin-top:16px">Zonas de atendimento</h3>
+            <div class="chips" id="zonasDiarista"></div>
+
+            <h3 id="av-perfil" style="margin-top:16px">Avaliações</h3>
+            <!-- Preenchido pela frente de avaliações (Kaua). -->
+            <div id="avaliacoesPerfil"></div>
+        </div>
+
+        <!-- Data, horário e valor são escolhidos na tela Solicitar Serviço. -->
+        <div class="card" style="align-self:start">
+            <button type="button" id="agendar" class="btn full"
+                style="padding:20px;font-size:20px">Agendar diária</button>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>
